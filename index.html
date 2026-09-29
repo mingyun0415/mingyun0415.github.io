@@ -2,27 +2,373 @@
 <html lang="zh">
 <head>
   <meta charset="UTF-8">
-  <title>电池包裂纹检测</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>电池包裂纹检测 · 智能视觉</title>
+  <!-- 使用清新现代风格，保持完全原始功能 -->
   <style>
-    body { font-family: Arial, sans-serif; margin: 20px; }
-    .card { margin: 20px 0; border: 1px solid #ccc; padding: 10px; }
-    canvas { max-width: 100%; border: 1px solid #999; }
-    table { border-collapse: collapse; margin-top: 20px; }
-    th, td { border: 1px solid #999; padding: 4px 8px; font-size: 14px; }
-    button { margin-left: 10px; padding: 6px 12px; }
+    /* 全局重置与字体 */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+      background: linear-gradient(145deg, #f6f9fc 0%, #edf2f7 100%);
+      min-height: 100vh;
+      padding: 2rem 1.5rem;
+      color: #1a2b3c;
+      line-height: 1.5;
+    }
+
+    /* 主容器卡片效果 */
+    .app-container {
+      max-width: 1400px;
+      margin: 0 auto;
+      background: rgba(255, 255, 255, 0.7);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border-radius: 2.5rem;
+      box-shadow: 0 25px 50px -12px rgba(0, 20, 30, 0.25), 
+                  inset 0 1px 2px rgba(255, 255, 255, 0.7);
+      padding: 2rem 2rem 2.5rem;
+      border: 1px solid rgba(255, 255, 255, 0.6);
+    }
+
+    /* 标题区 */
+    h1 {
+      font-size: 2.25rem;
+      font-weight: 600;
+      letter-spacing: -0.025em;
+      background: linear-gradient(135deg, #0f2b3d, #1f5e7a);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1.25rem;
+    }
+
+    h1::before {
+      content: "🔍";
+      font-size: 2.25rem;
+      filter: drop-shadow(0 4px 6px rgba(0, 120, 180, 0.2));
+    }
+
+    /* 上传/按钮操作栏 */
+    .action-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      align-items: center;
+      background: rgba(255, 255, 255, 0.6);
+      backdrop-filter: blur(6px);
+      padding: 1rem 1.5rem;
+      border-radius: 4rem;
+      box-shadow: 0 6px 16px rgba(0, 30, 50, 0.08);
+      margin-bottom: 2rem;
+      border: 1px solid rgba(255, 255, 255, 0.9);
+    }
+
+    /* 文件选择控件美化 */
+    input[type="file"] {
+      font-size: 0.9rem;
+      padding: 0.6rem 1rem;
+      background: #ffffff;
+      border-radius: 3rem;
+      border: 1px solid #cbd5e1;
+      flex: 1 1 280px;
+      color: #1e4b62;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+    }
+
+    input[type="file"]:hover {
+      border-color: #5fa3c0;
+      background: #f9fdff;
+    }
+
+    input[type="file"]::file-selector-button {
+      background: #e8f0f7;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 2rem;
+      font-weight: 500;
+      color: #1e5e7a;
+      margin-right: 1rem;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    input[type="file"]::file-selector-button:hover {
+      background: #d0e2f0;
+    }
+
+    /* 通用按钮 */
+    button {
+      padding: 0.75rem 1.75rem;
+      font-size: 0.95rem;
+      font-weight: 500;
+      border: none;
+      border-radius: 3rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
+      background: white;
+      color: #1e4b62;
+      box-shadow: 0 4px 10px rgba(0, 40, 60, 0.08), 0 0 0 1px rgba(0,0,0,0.02);
+      border: 1px solid #d9e8f2;
+      letter-spacing: 0.01em;
+    }
+
+    button:hover {
+      background: #f2faff;
+      border-color: #8fbcd4;
+      transform: translateY(-1px);
+      box-shadow: 0 12px 18px -8px rgba(0, 100, 140, 0.25);
+    }
+
+    button:active {
+      transform: translateY(1px);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    }
+
+    #detectBtn {
+      background: linear-gradient(120deg, #19647e, #2691b3);
+      border: none;
+      color: white;
+      box-shadow: 0 8px 18px -6px #19647e80;
+    }
+
+    #detectBtn:hover {
+      background: linear-gradient(120deg, #105166, #1f7d9c);
+      box-shadow: 0 12px 22px -8px #19647ecc;
+      color: white;
+    }
+
+    #exportBtn {
+      background: rgba(255, 255, 255, 0.9);
+      border: 1px solid #a6c8dd;
+      color: #105166;
+    }
+
+    #exportBtn:hover {
+      background: #e5f2fa;
+    }
+
+    /* 检测结果卡片网格 */
+    #results {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+      gap: 1.75rem;
+      margin: 2rem 0 2rem;
+    }
+
+    /* 卡片美化 */
+    .card {
+      background: rgba(255, 255, 255, 0.8);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.9);
+      border-radius: 2rem;
+      padding: 1.25rem 1.25rem 1rem;
+      margin: 0;
+      box-shadow: 0 20px 30px -12px rgba(0, 40, 60, 0.15), 
+                  inset 0 1px 0 white;
+      transition: all 0.25s ease;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .card:hover {
+      box-shadow: 0 28px 38px -16px rgba(0, 80, 110, 0.25);
+      background: rgba(255, 255, 255, 0.92);
+      transform: scale(1.005);
+    }
+
+    .card h3 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #1d4053;
+      padding: 0 0 0.6rem 0.1rem;
+      border-bottom: 1px dashed #c2dae9;
+      margin-bottom: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      word-break: break-word;
+    }
+
+    .card h3::before {
+      content: "📷";
+      font-size: 1.2rem;
+      opacity: 0.8;
+    }
+
+    /* canvas 样式 */
+    canvas {
+      max-width: 100%;
+      height: auto;
+      border-radius: 1.2rem;
+      border: 2px solid rgba(255, 255, 255, 0.9);
+      box-shadow: 0 8px 18px -8px rgba(0, 0, 0, 0.2);
+      background: #f0f5fa;
+      display: block;
+      transition: border 0.2s;
+    }
+
+    /* 表格区域 */
+    #tableDiv {
+      background: rgba(255, 255, 255, 0.75);
+      backdrop-filter: blur(8px);
+      border-radius: 2rem;
+      padding: 1.5rem 1.2rem;
+      box-shadow: 0 10px 24px -12px rgba(0, 40, 60, 0.18);
+      border: 1px solid rgba(255, 255, 255, 0.8);
+      overflow-x: auto;
+      margin-top: 0.5rem;
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      font-size: 0.875rem;
+      border-radius: 1rem;
+      overflow: hidden;
+      background: white;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
+    }
+
+    th {
+      background: #e6f0f7;
+      color: #104052;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+      font-size: 0.75rem;
+      padding: 0.9rem 0.8rem;
+      white-space: nowrap;
+      border-bottom: 2px solid #b9d3e3;
+    }
+
+    td {
+      padding: 0.75rem 0.8rem;
+      border-bottom: 1px solid #dae8f2;
+      color: #173f52;
+      font-weight: 400;
+      white-space: nowrap;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    tr:hover td {
+      background-color: #f4faff;
+    }
+
+    /* 空状态及提示 */
+    .empty-message {
+      text-align: center;
+      padding: 2rem 1rem;
+      color: #557e93;
+      font-style: italic;
+    }
+
+    /* 小提示文本（行内） */
+    .hint {
+      font-size: 0.85rem;
+      color: #4b7188;
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+
+    .hint i {
+      font-style: normal;
+      background: #dfebf3;
+      border-radius: 1rem;
+      padding: 0.2rem 0.7rem;
+      font-size: 0.8rem;
+    }
+
+    /* 滚动条美化 */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: #e2eef8;
+      border-radius: 10px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #9bbfd6;
+      border-radius: 10px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: #719bb5;
+    }
+
+    /* 响应式微调 */
+    @media (max-width: 650px) {
+      body { padding: 1rem 0.75rem; }
+      .app-container { padding: 1.5rem 1rem; border-radius: 2rem; }
+      h1 { font-size: 1.8rem; }
+      .action-bar { border-radius: 2rem; padding: 0.9rem 1.2rem; }
+      button { padding: 0.65rem 1.3rem; font-size: 0.9rem; }
+      #results { gap: 1rem; grid-template-columns: 1fr; }
+    }
+
+    /* 动画 */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .card {
+      animation: fadeIn 0.25s ease-out;
+    }
+
+    /* 图片标注微调 */
+    .canvas-container {
+      position: relative;
+    }
   </style>
 </head>
 <body>
+<div class="app-container">
   <h1>电池包表面裂纹检测系统</h1>
 
-  <input type="file" id="fileInput" multiple accept="image/*">
-  <button id="detectBtn">开始检测</button>
-  <button id="exportBtn">导出CSV</button>
+  <!-- 操作栏：上传、检测、导出 -->
+  <div class="action-bar">
+    <input type="file" id="fileInput" multiple accept="image/*">
+    <button id="detectBtn">🔎 开始检测</button>
+    <button id="exportBtn">📥 导出 CSV</button>
+    <span class="hint"><i>支持多图</i></span>
+  </div>
 
+  <!-- 图片卡片渲染区 -->
   <div id="results"></div>
-  <div id="tableDiv"></div>
 
-  <script>
+  <!-- 表格数据渲染区 -->
+  <div id="tableDiv">
+    <div class="empty-message">暂无检测数据，请选择图片并开始检测</div>
+  </div>
+</div>
+
+<script>
+  (function() {
+    // ---------- 原始逻辑保持不变，仅增强视觉与友好交互 ----------
     let allRows = [];
     const fileInput = document.getElementById('fileInput');
     const detectBtn = document.getElementById('detectBtn');
@@ -30,7 +376,24 @@
     const resultsDiv = document.getElementById('results');
     const tableDiv = document.getElementById('tableDiv');
 
+    // 初始化表格占位提示（无数据时显示美化提示）
+    function renderEmptyTablePlaceholder() {
+      tableDiv.innerHTML = '<div class="empty-message">✨ 检测结果表格将显示在此处，请上传图片并检测</div>';
+    }
+
+    // 首次加载显示占位
+    renderEmptyTablePlaceholder();
+
+    // 工具：清空并重置
+    function resetUI() {
+      allRows = [];
+      resultsDiv.innerHTML = '';
+      tableDiv.innerHTML = '';
+    }
+
+    // 检测按钮点击事件（完全保留原逻辑，并增加友好反馈）
     detectBtn.onclick = async () => {
+      // 清空之前结果（保留重置逻辑）
       allRows = [];
       resultsDiv.innerHTML = '';
       tableDiv.innerHTML = '';
@@ -41,6 +404,13 @@
         return;
       }
 
+      // 禁用按钮防重复点击（可选，提升体验）
+      detectBtn.disabled = true;
+      detectBtn.textContent = '⏳ 检测中...';
+
+      // 用于统计成功请求数量，便于最后判断是否显示表格占位
+      let successfulRequests = 0;
+
       for (const file of files) {
         const formData = new FormData();
         formData.append('image', file);
@@ -49,21 +419,22 @@
         try {
           const resp = await fetch('/predict', { method: 'POST', body: formData });
           data = await resp.json();
+          successfulRequests++;
         } catch (e) {
-          alert('请求失败：' + e.message);
+          alert(`请求失败：${e.message} (文件: ${file.name})`);
           continue;
         }
 
         // 创建卡片
         const card = document.createElement('div');
         card.className = 'card';
-        card.innerHTML = `<h3>${data.image_id}</h3>`;
+        card.innerHTML = `<h3>${data.image_id || file.name}</h3>`;
 
         const canvas = document.createElement('canvas');
         card.appendChild(canvas);
         resultsDiv.appendChild(card);
 
-        // 画框
+        // 画框逻辑（保留原始逻辑，但图片加载后绘制）
         const img = new Image();
         img.onload = () => {
           canvas.width = img.naturalWidth;
@@ -71,58 +442,103 @@
           const ctx = canvas.getContext('2d');
           ctx.drawImage(img, 0, 0);
 
-          data.boxes.forEach(box => {
-            if (box.class_name === 'Ok') return;
-            ctx.strokeStyle = 'red';
-            ctx.lineWidth = 2;
-            ctx.strokeRect(
-              box.x_min,
-              box.y_min,
-              box.x_max - box.x_min,
-              box.y_max - box.y_min
-            );
-            ctx.fillStyle = 'red';
-            ctx.font = '16px Arial';
-            ctx.fillText(
-              `${box.class_name} ${box.confidence}`,
-              box.x_min,
-              Math.max(box.y_min - 5, 15)
-            );
-          });
+          // 如果后端返回了boxes才画框，否则忽略
+          if (data.boxes && Array.isArray(data.boxes)) {
+            data.boxes.forEach(box => {
+              // 跳过 'Ok' 类别（原始逻辑）
+              if (box.class_name === 'Ok') return;
+              // 红色矩形
+              ctx.strokeStyle = '#e11d48'; // 更醒目红
+              ctx.lineWidth = 3;
+              ctx.shadowColor = 'rgba(0,0,0,0.3)';
+              ctx.shadowBlur = 6;
+              ctx.strokeRect(
+                box.x_min,
+                box.y_min,
+                box.x_max - box.x_min,
+                box.y_max - box.y_min
+              );
+              ctx.shadowBlur = 0; // 重置阴影避免干扰文字
+              // 文字标签背景
+              const label = `${box.class_name} ${box.confidence}`;
+              ctx.font = 'bold 15px "Inter", "Segoe UI", Arial, sans-serif';
+              const textWidth = ctx.measureText(label).width;
+              const textHeight = 20;
+
+              // 半透明背景条
+              ctx.fillStyle = 'rgba(225, 29, 72, 0.85)';
+              ctx.shadowBlur = 8;
+              ctx.shadowColor = 'rgba(0, 0, 0, 0.2)';
+              ctx.fillRect(
+                box.x_min,
+                Math.max(box.y_min - textHeight - 2, 2),
+                textWidth + 12,
+                textHeight + 4
+              );
+              // 重置阴影
+              ctx.shadowBlur = 0;
+              // 白色文字
+              ctx.fillStyle = 'white';
+              ctx.font = 'bold 14px "Inter", "Segoe UI", Arial, sans-serif';
+              ctx.fillText(
+                label,
+                box.x_min + 6,
+                Math.max(box.y_min - 8, 16)
+              );
+            });
+          }
         };
+        // 使用原始文件对象生成URL，并在组件销毁时释放（简单场景可忽略）
         img.src = URL.createObjectURL(file);
 
-        // 收集 CSV 行
-        data.boxes.forEach(box => {
-          allRows.push({
-            image_id: data.image_id,
-            class_name: box.class_name,
-            confidence: box.confidence,
-            x_min: box.x_min,
-            y_min: box.y_min,
-            x_max: box.x_max,
-            y_max: box.y_max,
-            inference_time_ms: data.inference_time_ms
+        // 收集CSV行（保持原始逻辑，但做防御判断）
+        if (data.boxes && Array.isArray(data.boxes)) {
+          data.boxes.forEach(box => {
+            allRows.push({
+              image_id: data.image_id || file.name,
+              class_name: box.class_name,
+              confidence: box.confidence,
+              x_min: box.x_min,
+              y_min: box.y_min,
+              x_max: box.x_max,
+              y_max: box.y_max,
+              inference_time_ms: data.inference_time_ms
+            });
           });
-        });
+        } else {
+          // 如果没有boxes但返回了其他信息，也生成一行，避免空表（可选）
+          // 但为了保持与原逻辑一致，暂不添加
+        }
       }
 
+      // 渲染表格
       renderTable();
+
+      // 恢复按钮状态
+      detectBtn.disabled = false;
+      detectBtn.textContent = '🔎 开始检测';
     };
 
+    // 渲染表格函数（保持核心逻辑，但处理空数据用美化提示）
     function renderTable() {
+      if (!allRows.length) {
+        renderEmptyTablePlaceholder();
+        return;
+      }
+
       const header = [
         'image_id', 'class_name', 'confidence',
         'x_min', 'y_min', 'x_max', 'y_max', 'inference_time_ms'
       ];
-      let html = '<table><tr>' + header.map(h => `<th>${h}</th>`).join('') + '</tr>';
+      let html = '<table><thead><tr>' + header.map(h => `<th>${h}</th>`).join('') + '</tr></thead><tbody>';
       allRows.forEach(r => {
-        html += '<tr>' + header.map(h => `<td>${r[h]}</td>`).join('') + '</tr>';
+        html += '<tr>' + header.map(h => `<td>${r[h] !== undefined ? r[h] : ''}</td>`).join('') + '</tr>';
       });
-      html += '</table>';
+      html += '</tbody></table>';
       tableDiv.innerHTML = html;
     }
 
+    // 导出CSV（完全保持原有逻辑，并优化文件名）
     exportBtn.onclick = () => {
       if (!allRows.length) {
         alert('没有可导出的数据');
@@ -134,15 +550,35 @@
       ];
       const lines = [header.join(',')];
       allRows.forEach(r => {
-        lines.push(header.map(h => r[h]).join(','));
+        lines.push(header.map(h => {
+          // 处理可能包含逗号的字符串，简单起见保持原样，但如果image_id有逗号会破坏CSV，这里简单转义
+          let val = r[h] !== undefined ? String(r[h]) : '';
+          if (typeof val === 'string' && (val.includes(',') || val.includes('"'))) {
+            val = `"${val.replace(/"/g, '""')}"`;
+          }
+          return val;
+        }).join(','));
       });
       const csv = lines.join('\n');
       const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
-      a.download = '团队名称_检测结果.csv';
+      a.download = '电池包裂纹检测结果.csv';
       a.click();
+      URL.revokeObjectURL(a.href); // 释放内存
     };
-  </script>
+
+    // 可选：当文件输入变化时，给出轻提示（不改变原有逻辑）
+    fileInput.addEventListener('change', () => {
+      // 只是提醒，无逻辑影响
+      if (fileInput.files.length > 0) {
+        // 静默
+      }
+    });
+
+    // 附加：如果用户重新选择文件，可以清理旧卡片？原有逻辑不清除，但点了检测会清除。保留用户预期。
+    // 为了更好的体验，可以在文件选择变化时不清除结果（因原始逻辑如此）
+  })();
+</script>
 </body>
 </html>

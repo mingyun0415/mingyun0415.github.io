@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <title>电池包裂纹检测</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    .card { margin: 20px 0; border: 1px solid #ccc; padding: 10px; }
+    canvas { max-width: 100%; border: 1px solid #999; }
+    table { border-collapse: collapse; margin-top: 20px; }
+    th, td { border: 1px solid #999; padding: 4px 8px; font-size: 14px; }
+    button { margin-left: 10px; padding: 6px 12px; }
+  </style>
+</head>
+<body>
+  <h1>电池包表面裂纹检测系统</h1>
+
+  <input type="file" id="fileInput" multiple accept="image/*">
+  <button id="detectBtn">开始检测</button>
+  <button id="exportBtn">导出CSV</button>
+
+  <div id="results"></div>
+  <div id="tableDiv"></div>
+
+  <script>
+    let allRows = [];
+    const fileInput = document.getElementById('fileInput');
+    const detectBtn = document.getElementById('detectBtn');
+    const exportBtn = document.getElementById('exportBtn');
+    const resultsDiv = document.getElementById('results');
+    const tableDiv = document.getElementById('tableDiv');
+
+    detectBtn.onclick = async () => {
+      allRows = [];
+      resultsDiv.innerHTML = '';
+      tableDiv.innerHTML = '';
+
+      const files = fileInput.files;
+      if (!files.length) {
+        alert('请先选择图片');
+        return;
+      }
+
+      for (const file of files) {
+        const formData = new FormData();
+        formData.append('image', file);
+
+        let data;
+        try {
+          const resp = await fetch('/predict', { method: 'POST', body: formData });
+          data = await resp.json();
+        } catch (e) {
+          alert('请求失败：' + e.message);
+          continue;
+        }
+
+        // 创建卡片
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = `<h3>${data.image_id}</h3>`;
+
+        const canvas = document.createElement('canvas');
+        card.appendChild(canvas);
+        resultsDiv.appendChild(card);
+
+        // 画框
+        const img = new Image();
+        img.onload = () => {
+          canvas.width = img.naturalWidth;
+          canvas.height = img.naturalHeight;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0);
+
+          data.boxes.forEach(box => {
+            if (box.class_name === 'Ok') return;
+            ctx.strokeStyle = 'red';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(
+              box.x_min,
+              box.y_min,
+              box.x_max - box.x_min,
+              box.y_max - box.y_min
+            );
+            ctx.fillStyle = 'red';
+            ctx.font = '16px Arial';
+            ctx.fillText(
+              `${box.class_name} ${box.confidence}`,
+              box.x_min,
+              Math.max(box.y_min - 5, 15)
+            );
+          });
+        };
+        img.src = URL.createObjectURL(file);
+
+        // 收集 CSV 行
+        data.boxes.forEach(box => {
+          allRows.push({
+            image_id: data.image_id,
+            class_name: box.class_name,
+            confidence: box.confidence,
+            x_min: box.x_min,
+            y_min: box.y_min,
+            x_max: box.x_max,
+            y_max: box.y_max,
+            inference_time_ms: data.inference_time_ms
+          });
+        });
+      }
+
+      renderTable();
+    };
+
+    function renderTable() {
+      const header = [
+        'image_id', 'class_name', 'confidence',
+        'x_min', 'y_min', 'x_max', 'y_max', 'inference_time_ms'
+      ];
+      let html = '<table><tr>' + header.map(h => `<th>${h}</th>`).join('') + '</tr>';
+      allRows.forEach(r => {
+        html += '<tr>' + header.map(h => `<td>${r[h]}</td>`).join('') + '</tr>';
+      });
+      html += '</table>';
+      tableDiv.innerHTML = html;
+    }
+
+    exportBtn.onclick = () => {
+      if (!allRows.length) {
+        alert('没有可导出的数据');
+        return;
+      }
+      const header = [
+        'image_id', 'class_name', 'confidence',
+        'x_min', 'y_min', 'x_max', 'y_max', 'inference_time_ms'
+      ];
+      const lines = [header.join(',')];
+      allRows.forEach(r => {
+        lines.push(header.map(h => r[h]).join(','));
+      });
+      const csv = lines.join('\n');
+      const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = '团队名称_检测结果.csv';
+      a.click();
+    };
+  </script>
+</body>
+</html>

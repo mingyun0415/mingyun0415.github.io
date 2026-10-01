@@ -125,7 +125,7 @@
 
     .model-input-wrapper input[type="file"] {
       flex: 1;
-      padding-right: 3rem; /* 给状态标识留空间 */
+      padding-right: 3rem;
     }
 
     .model-status {
@@ -367,6 +367,264 @@
       background: #719bb5;
     }
 
+    /* ========== 新增：检测历史窗口 ========== */
+    .history-section {
+      margin-top: 2.5rem;
+      background: rgba(255, 255, 255, 0.65);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border-radius: 2rem;
+      border: 1px solid rgba(255, 255, 255, 0.9);
+      box-shadow: 0 15px 30px -15px rgba(0, 40, 60, 0.2);
+      overflow: hidden;
+      transition: all 0.25s ease;
+    }
+
+    .history-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1.25rem 1.75rem;
+      background: linear-gradient(135deg, #eef6fc, #deecf7);
+      border-bottom: 1px solid #c9deed;
+      cursor: pointer;
+      user-select: none;
+      transition: background 0.2s;
+    }
+
+    .history-header:hover {
+      background: linear-gradient(135deg, #e6f2fc, #d4e6f4);
+    }
+
+    .history-header h2 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: #124257;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .history-header h2::before {
+      content: "🖼️";
+      font-size: 1.4rem;
+    }
+
+    .history-badge {
+      background: #19647e;
+      color: white;
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 0.25rem 0.75rem;
+      border-radius: 2rem;
+      box-shadow: 0 2px 6px rgba(25, 100, 126, 0.3);
+    }
+
+    .history-toggle-icon {
+      font-size: 1rem;
+      color: #2e6f8f;
+      transition: transform 0.3s ease;
+      margin-left: 0.75rem;
+    }
+
+    .history-section.collapsed .history-toggle-icon {
+      transform: rotate(-90deg);
+    }
+
+    .history-section.collapsed .history-body {
+      max-height: 0;
+      padding-top: 0;
+      padding-bottom: 0;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .history-body {
+      max-height: 800px;
+      overflow-y: auto;
+      padding: 1.5rem 1.75rem 1.75rem;
+      opacity: 1;
+      transition: max-height 0.4s cubic-bezier(0.2, 0.9, 0.4, 1), 
+                  padding 0.3s ease, 
+                  opacity 0.25s ease;
+    }
+
+    /* 历史画廊网格 */
+    .history-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 1rem;
+    }
+
+    .history-item {
+      position: relative;
+      border-radius: 1.25rem;
+      overflow: hidden;
+      background: #ffffff;
+      border: 2px solid rgba(255, 255, 255, 0.95);
+      box-shadow: 0 6px 14px -6px rgba(0, 40, 60, 0.2);
+      aspect-ratio: 4 / 3;
+      transition: all 0.25s cubic-bezier(0.2, 0.9, 0.3, 1);
+      cursor: pointer;
+      animation: fadeIn 0.3s ease-out;
+    }
+
+    .history-item:hover {
+      transform: translateY(-4px) scale(1.02);
+      box-shadow: 0 16px 24px -10px rgba(0, 80, 110, 0.35);
+      border-color: #8fc1db;
+      z-index: 2;
+    }
+
+    .history-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      transition: transform 0.35s ease;
+    }
+
+    .history-item:hover img {
+      transform: scale(1.05);
+    }
+
+    /* 图片底部信息条 */
+    .history-item-overlay {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: linear-gradient(to top, rgba(10, 35, 50, 0.85), transparent);
+      padding: 1.25rem 0.6rem 0.5rem;
+      color: white;
+      font-size: 0.7rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.15rem;
+      pointer-events: none;
+    }
+
+    .history-item-overlay .name {
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-size: 0.75rem;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+    }
+
+    .history-item-overlay .stats {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.65rem;
+      opacity: 0.9;
+    }
+
+    /* 时间戳徽章 */
+    .history-timestamp {
+      position: absolute;
+      top: 0.5rem;
+      right: 0.5rem;
+      background: rgba(0, 0, 0, 0.55);
+      backdrop-filter: blur(4px);
+      color: #fff;
+      font-size: 0.6rem;
+      font-weight: 500;
+      padding: 0.15rem 0.5rem;
+      border-radius: 1rem;
+      letter-spacing: 0.02em;
+    }
+
+    /* 无历史记录时的提示 */
+    .history-empty {
+      text-align: center;
+      padding: 2.5rem 1rem;
+      color: #6a8fa3;
+      font-style: italic;
+      font-size: 0.95rem;
+    }
+
+    .history-empty::before {
+      content: "📭";
+      display: block;
+      font-size: 2rem;
+      margin-bottom: 0.5rem;
+      opacity: 0.6;
+      font-style: normal;
+    }
+
+    /* 点击查看大图模态 */
+    .modal-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(8, 25, 35, 0.7);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+      padding: 2rem;
+      animation: fadeIn 0.2s ease;
+    }
+
+    .modal-backdrop.active {
+      display: flex;
+    }
+
+    .modal-content {
+      max-width: 90vw;
+      max-height: 90vh;
+      border-radius: 1.5rem;
+      overflow: hidden;
+      box-shadow: 0 30px 60px -15px rgba(0,0,0,0.5);
+      background: #0f2b3d;
+      position: relative;
+      animation: fadeIn 0.25s ease-out;
+    }
+
+    .modal-content img {
+      max-width: 90vw;
+      max-height: 80vh;
+      display: block;
+      object-fit: contain;
+    }
+
+    .modal-caption {
+      padding: 0.75rem 1.25rem;
+      background: #10394d;
+      color: white;
+      font-size: 0.85rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 0.75rem;
+      right: 0.75rem;
+      background: rgba(255,255,255,0.15);
+      backdrop-filter: blur(4px);
+      border: 1px solid rgba(255,255,255,0.3);
+      color: white;
+      width: 2.25rem;
+      height: 2.25rem;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      z-index: 2;
+    }
+
+    .modal-close:hover {
+      background: rgba(255,255,255,0.3);
+      transform: scale(1.05);
+    }
+
     /* 响应式微调 */
     @media (max-width: 650px) {
       body { padding: 1rem 0.75rem; }
@@ -375,6 +633,9 @@
       .action-bar { border-radius: 2rem; padding: 0.9rem 1.2rem; }
       button { padding: 0.65rem 1.3rem; font-size: 0.9rem; }
       #results { gap: 1rem; grid-template-columns: 1fr; }
+      .history-grid { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); }
+      .history-header { padding: 1rem 1.2rem; }
+      .history-body { padding: 1rem 1.2rem 1.25rem; }
     }
 
     /* 动画 */
@@ -419,12 +680,40 @@
     <span class="hint"><i>支持多图</i></span>
   </div>
 
-  <!-- 图片卡片渲染区 -->
+  <!-- 图片卡片渲染区（当前批次检测结果） -->
   <div id="results"></div>
 
   <!-- 表格数据渲染区 -->
   <div id="tableDiv">
     <div class="empty-message">暂无检测数据，请选择图片并开始检测</div>
+  </div>
+
+  <!-- ========== 新增：检测历史窗口 ========== -->
+  <div class="history-section collapsed" id="historySection">
+    <div class="history-header" id="historyHeader">
+      <h2>检测历史</h2>
+      <div style="display: flex; align-items: center; gap: 0.75rem;">
+        <span class="history-badge" id="historyCount">0 张</span>
+        <span class="history-toggle-icon">▼</span>
+      </div>
+    </div>
+    <div class="history-body" id="historyBody">
+      <div class="history-grid" id="historyGrid">
+        <div class="history-empty">暂无检测历史，上传图片并检测后将自动保存在此处</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 模态查看大图 -->
+<div class="modal-backdrop" id="modalBackdrop">
+  <div class="modal-content">
+    <div class="modal-close" id="modalClose">✕</div>
+    <img id="modalImage" src="" alt="历史检测图片">
+    <div class="modal-caption">
+      <span id="modalCaption">检测图片</span>
+      <span id="modalDate"></span>
+    </div>
   </div>
 </div>
 
@@ -432,7 +721,9 @@
   (function() {
     // ---------- 核心状态 ----------
     let allRows = [];
-    let currentModelFile = null; // 存储当前选中的模型文件
+    let currentModelFile = null;
+    // 历史记录：[{ id, fileName, imageUrl, detectCount, inferenceTime, timestamp, boxes }]
+    let historyItems = [];
 
     const modelInput = document.getElementById('modelInput');
     const modelStatus = document.getElementById('modelStatus');
@@ -442,13 +733,25 @@
     const resultsDiv = document.getElementById('results');
     const tableDiv = document.getElementById('tableDiv');
 
-    // 初始化表格占位提示（无数据时显示美化提示）
+    // 历史相关 DOM
+    const historySection = document.getElementById('historySection');
+    const historyHeader = document.getElementById('historyHeader');
+    const historyGrid = document.getElementById('historyGrid');
+    const historyCount = document.getElementById('historyCount');
+
+    // 模态相关 DOM
+    const modalBackdrop = document.getElementById('modalBackdrop');
+    const modalImage = document.getElementById('modalImage');
+    const modalCaption = document.getElementById('modalCaption');
+    const modalDate = document.getElementById('modalDate');
+    const modalClose = document.getElementById('modalClose');
+
+    // ---------- 初始化 ----------
     function renderEmptyTablePlaceholder() {
       tableDiv.innerHTML = '<div class="empty-message">✨ 检测结果表格将显示在此处，请上传图片并检测</div>';
     }
-
-    // 首次加载显示占位
     renderEmptyTablePlaceholder();
+    renderHistory();
 
     // ---------- 模型上传交互 ----------
     modelInput.addEventListener('change', () => {
@@ -464,9 +767,97 @@
       }
     });
 
+    // ---------- 历史面板折叠交互 ----------
+    historyHeader.addEventListener('click', () => {
+      historySection.classList.toggle('collapsed');
+      // 切换图标方向由 CSS 控制
+    });
+
+    // ---------- 模态关闭 ----------
+    modalClose.addEventListener('click', closeModal);
+    modalBackdrop.addEventListener('click', (e) => {
+      if (e.target === modalBackdrop) closeModal();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && modalBackdrop.classList.contains('active')) {
+        closeModal();
+      }
+    });
+
+    function closeModal() {
+      modalBackdrop.classList.remove('active');
+      modalImage.src = '';
+    }
+
+    function openModal(item) {
+      modalImage.src = item.imageUrl;
+      modalCaption.textContent = item.fileName || '检测图片';
+      modalDate.textContent = item.timestamp ? new Date(item.timestamp).toLocaleString('zh-CN') : '';
+      modalBackdrop.classList.add('active');
+    }
+
+    // ---------- 渲染历史记录 ----------
+    function renderHistory() {
+      // 更新计数
+      historyCount.textContent = historyItems.length + ' 张';
+
+      if (!historyItems.length) {
+        historyGrid.innerHTML = '<div class="history-empty">暂无检测历史，上传图片并检测后将自动保存在此处</div>';
+        return;
+      }
+
+      let html = '';
+      // 从新到旧展示
+      historyItems.slice().reverse().forEach((item, idx) => {
+        // 使用原始索引或者唯一的 id 作为标识，用 data-id 存储 item.id
+        html += `
+          <div class="history-item" data-id="${item.id}" title="点击查看大图">
+            <img src="${item.imageUrl}" alt="${item.fileName}" loading="lazy">
+            <span class="history-timestamp">${formatTime(item.timestamp)}</span>
+            <div class="history-item-overlay">
+              <span class="name">${escapeHtml(item.fileName)}</span>
+              <div class="stats">
+                <span>🔍 ${item.detectCount} 框</span>
+                <span>⏱ ${item.inferenceTime ? item.inferenceTime.toFixed(0) + 'ms' : '--'}</span>
+              </div>
+            </div>
+          </div>
+        `;
+      });
+      historyGrid.innerHTML = html;
+
+      // 绑定点击事件
+      historyGrid.querySelectorAll('.history-item').forEach(el => {
+        el.addEventListener('click', () => {
+          const id = el.dataset.id;
+          const item = historyItems.find(it => it.id == id);
+          if (item) openModal(item);
+        });
+      });
+    }
+
+    // 工具：简单转义
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str).replace(/[&<>"]/g, function(m) {
+        if (m === '&') return '&amp;';
+        if (m === '<') return '&lt;';
+        if (m === '>') return '&gt;';
+        if (m === '"') return '&quot;';
+        return m;
+      });
+    }
+
+    // 格式化时间：只显示 HH:MM:SS
+    function formatTime(ts) {
+      if (!ts) return '';
+      const d = new Date(ts);
+      return d.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    }
+
     // ---------- 检测按钮事件 ----------
     detectBtn.onclick = async () => {
-      // 清空之前结果
+      // 清空当前结果展示
       allRows = [];
       resultsDiv.innerHTML = '';
       tableDiv.innerHTML = '';
@@ -477,7 +868,7 @@
         return;
       }
 
-      // 禁用按钮防重复点击（可选，提升体验）
+      // 禁用按钮防重复点击
       detectBtn.disabled = true;
       detectBtn.textContent = '⏳ 检测中...';
 
@@ -485,7 +876,6 @@
         const formData = new FormData();
         formData.append('image', file);
 
-        // ★ 若已选择模型，则一并上传
         if (currentModelFile) {
           formData.append('model', currentModelFile);
         }
@@ -508,7 +898,10 @@
         card.appendChild(canvas);
         resultsDiv.appendChild(card);
 
-        // 画框逻辑（保留原始逻辑，但图片加载后绘制）
+        // 图片 URL 由文件创建，用于卡片和历史
+        const imageUrl = URL.createObjectURL(file);
+
+        // 画框逻辑
         const img = new Image();
         img.onload = () => {
           canvas.width = img.naturalWidth;
@@ -520,7 +913,6 @@
             data.boxes.forEach(box => {
               if (box.class_name === 'Ok') return;
 
-              // 红色矩形
               ctx.strokeStyle = '#e11d48';
               ctx.lineWidth = 3;
               ctx.shadowColor = 'rgba(0,0,0,0.3)';
@@ -533,7 +925,6 @@
               );
               ctx.shadowBlur = 0;
 
-              // 文字标签背景
               const label = `${box.class_name} ${box.confidence}`;
               ctx.font = 'bold 15px "Inter", "Segoe UI", Arial, sans-serif';
               const textWidth = ctx.measureText(label).width;
@@ -550,7 +941,6 @@
               );
               ctx.shadowBlur = 0;
 
-              // 白色文字
               ctx.fillStyle = 'white';
               ctx.font = 'bold 14px "Inter", "Segoe UI", Arial, sans-serif';
               ctx.fillText(
@@ -561,7 +951,7 @@
             });
           }
         };
-        img.src = URL.createObjectURL(file);
+        img.src = imageUrl;
 
         // 收集 CSV 行
         if (data.boxes && Array.isArray(data.boxes)) {
@@ -578,6 +968,23 @@
             });
           });
         }
+
+        // ★ 保存到历史记录
+        const detectCount = data.boxes ? data.boxes.filter(b => b.class_name !== 'Ok').length : 0;
+        const inferenceTime = data.inference_time_ms || 0;
+
+        historyItems.push({
+          id: Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+          fileName: data.image_id || file.name,
+          imageUrl: imageUrl,
+          detectCount: detectCount,
+          inferenceTime: inferenceTime,
+          timestamp: Date.now(),
+          boxes: data.boxes || []
+        });
+
+        // 每张图片处理后立即刷新历史展示
+        renderHistory();
       }
 
       // 渲染表格
@@ -599,43 +1006,4 @@
         'image_id', 'class_name', 'confidence',
         'x_min', 'y_min', 'x_max', 'y_max', 'inference_time_ms'
       ];
-      let html = '<table><thead><tr>' + header.map(h => `<th>${h}</th>`).join('') + '</tr></thead><tbody>';
-      allRows.forEach(r => {
-        html += '<tr>' + header.map(h => `<td>${r[h] !== undefined ? r[h] : ''}</td>`).join('') + '</tr>';
-      });
-      html += '</tbody></table>';
-      tableDiv.innerHTML = html;
-    }
-
-    // ---------- 导出 CSV ----------
-    exportBtn.onclick = () => {
-      if (!allRows.length) {
-        alert('没有可导出的数据');
-        return;
-      }
-      const header = [
-        'image_id', 'class_name', 'confidence',
-        'x_min', 'y_min', 'x_max', 'y_max', 'inference_time_ms'
-      ];
-      const lines = [header.join(',')];
-      allRows.forEach(r => {
-        lines.push(header.map(h => {
-          let val = r[h] !== undefined ? String(r[h]) : '';
-          if (typeof val === 'string' && (val.includes(',') || val.includes('"'))) {
-            val = `"${val.replace(/"/g, '""')}"`;
-          }
-          return val;
-        }).join(','));
-      });
-      const csv = lines.join('\n');
-      const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = '电池包裂纹检测结果.csv';
-      a.click();
-      URL.revokeObjectURL(a.href);
-    };
-  })();
-</script>
-</body>
-</html>
+      let html = '<table><thead><tr

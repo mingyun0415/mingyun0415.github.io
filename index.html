@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>电池包裂纹检测 · 智能视觉</title>
-  <!-- 使用清新现代风格，保持完全原始功能 -->
   <style>
     /* 全局重置与字体 */
     * {
@@ -30,7 +29,7 @@
       backdrop-filter: blur(10px);
       -webkit-backdrop-filter: blur(10px);
       border-radius: 2.5rem;
-      box-shadow: 0 25px 50px -12px rgba(0, 20, 30, 0.25), 
+      box-shadow: 0 25px 50px -12px rgba(0, 20, 30, 0.25),
                   inset 0 1px 2px rgba(255, 255, 255, 0.7);
       padding: 2rem 2rem 2.5rem;
       border: 1px solid rgba(255, 255, 255, 0.6);
@@ -68,7 +67,7 @@
       padding: 1rem 1.5rem;
       border-radius: 4rem;
       box-shadow: 0 6px 16px rgba(0, 30, 50, 0.08);
-      margin-bottom: 2rem;
+      margin-bottom: 1.5rem;
       border: 1px solid rgba(255, 255, 255, 0.9);
     }
 
@@ -79,7 +78,7 @@
       background: #ffffff;
       border-radius: 3rem;
       border: 1px solid #cbd5e1;
-      flex: 1 1 280px;
+      flex: 1 1 240px;
       color: #1e4b62;
       cursor: pointer;
       transition: all 0.2s ease;
@@ -105,6 +104,48 @@
 
     input[type="file"]::file-selector-button:hover {
       background: #d0e2f0;
+    }
+
+    /* 模型上传专用样式 */
+    .model-upload-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 1rem;
+      width: 100%;
+    }
+
+    .model-input-wrapper {
+      position: relative;
+      flex: 1 1 320px;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .model-input-wrapper input[type="file"] {
+      flex: 1;
+      padding-right: 3rem; /* 给状态标识留空间 */
+    }
+
+    .model-status {
+      position: absolute;
+      right: 1rem;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 0.2rem 0.6rem;
+      border-radius: 1rem;
+      background: #e0f0e8;
+      color: #0c6b4b;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+
+    .model-status.empty {
+      background: #f0e8e0;
+      color: #966b0c;
     }
 
     /* 通用按钮 */
@@ -139,6 +180,13 @@
       box-shadow: 0 2px 6px rgba(0,0,0,0.05);
     }
 
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
     #detectBtn {
       background: linear-gradient(120deg, #19647e, #2691b3);
       border: none;
@@ -146,7 +194,7 @@
       box-shadow: 0 8px 18px -6px #19647e80;
     }
 
-    #detectBtn:hover {
+    #detectBtn:hover:not(:disabled) {
       background: linear-gradient(120deg, #105166, #1f7d9c);
       box-shadow: 0 12px 22px -8px #19647ecc;
       color: white;
@@ -179,7 +227,7 @@
       border-radius: 2rem;
       padding: 1.25rem 1.25rem 1rem;
       margin: 0;
-      box-shadow: 0 20px 30px -12px rgba(0, 40, 60, 0.15), 
+      box-shadow: 0 20px 30px -12px rgba(0, 40, 60, 0.15),
                   inset 0 1px 0 white;
       transition: all 0.25s ease;
       display: flex;
@@ -339,9 +387,12 @@
       animation: fadeIn 0.25s ease-out;
     }
 
-    /* 图片标注微调 */
-    .canvas-container {
-      position: relative;
+    /* 模型区与操作栏分隔线 */
+    .section-divider {
+      width: 100%;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, #c2dae9, transparent);
+      margin: 0.25rem 0 0.5rem;
     }
   </style>
 </head>
@@ -349,8 +400,19 @@
 <div class="app-container">
   <h1>电池包表面裂纹检测系统</h1>
 
-  <!-- 操作栏：上传、检测、导出 -->
+  <!-- 操作栏：模型上传 + 图片上传 + 检测/导出 -->
   <div class="action-bar">
+    <!-- 模型上传行 -->
+    <div class="model-upload-row">
+      <div class="model-input-wrapper">
+        <input type="file" id="modelInput" accept=".pt,.pth,.onnx,.h5,.pb,.tflite,.engine,.trt,.weights,.bin">
+        <span class="model-status empty" id="modelStatus">未选择模型</span>
+      </div>
+    </div>
+
+    <div class="section-divider"></div>
+
+    <!-- 图片上传行 -->
     <input type="file" id="fileInput" multiple accept="image/*">
     <button id="detectBtn">🔎 开始检测</button>
     <button id="exportBtn">📥 导出 CSV</button>
@@ -368,8 +430,12 @@
 
 <script>
   (function() {
-    // ---------- 原始逻辑保持不变，仅增强视觉与友好交互 ----------
+    // ---------- 核心状态 ----------
     let allRows = [];
+    let currentModelFile = null; // 存储当前选中的模型文件
+
+    const modelInput = document.getElementById('modelInput');
+    const modelStatus = document.getElementById('modelStatus');
     const fileInput = document.getElementById('fileInput');
     const detectBtn = document.getElementById('detectBtn');
     const exportBtn = document.getElementById('exportBtn');
@@ -384,16 +450,23 @@
     // 首次加载显示占位
     renderEmptyTablePlaceholder();
 
-    // 工具：清空并重置
-    function resetUI() {
-      allRows = [];
-      resultsDiv.innerHTML = '';
-      tableDiv.innerHTML = '';
-    }
+    // ---------- 模型上传交互 ----------
+    modelInput.addEventListener('change', () => {
+      const file = modelInput.files[0];
+      if (file) {
+        currentModelFile = file;
+        modelStatus.textContent = '✓ ' + file.name;
+        modelStatus.classList.remove('empty');
+      } else {
+        currentModelFile = null;
+        modelStatus.textContent = '未选择模型';
+        modelStatus.classList.add('empty');
+      }
+    });
 
-    // 检测按钮点击事件（完全保留原逻辑，并增加友好反馈）
+    // ---------- 检测按钮事件 ----------
     detectBtn.onclick = async () => {
-      // 清空之前结果（保留重置逻辑）
+      // 清空之前结果
       allRows = [];
       resultsDiv.innerHTML = '';
       tableDiv.innerHTML = '';
@@ -408,18 +481,19 @@
       detectBtn.disabled = true;
       detectBtn.textContent = '⏳ 检测中...';
 
-      // 用于统计成功请求数量，便于最后判断是否显示表格占位
-      let successfulRequests = 0;
-
       for (const file of files) {
         const formData = new FormData();
         formData.append('image', file);
+
+        // ★ 若已选择模型，则一并上传
+        if (currentModelFile) {
+          formData.append('model', currentModelFile);
+        }
 
         let data;
         try {
           const resp = await fetch('/predict', { method: 'POST', body: formData });
           data = await resp.json();
-          successfulRequests++;
         } catch (e) {
           alert(`请求失败：${e.message} (文件: ${file.name})`);
           continue;
@@ -442,13 +516,12 @@
           const ctx = canvas.getContext('2d');
           ctx.drawImage(img, 0, 0);
 
-          // 如果后端返回了boxes才画框，否则忽略
           if (data.boxes && Array.isArray(data.boxes)) {
             data.boxes.forEach(box => {
-              // 跳过 'Ok' 类别（原始逻辑）
               if (box.class_name === 'Ok') return;
+
               // 红色矩形
-              ctx.strokeStyle = '#e11d48'; // 更醒目红
+              ctx.strokeStyle = '#e11d48';
               ctx.lineWidth = 3;
               ctx.shadowColor = 'rgba(0,0,0,0.3)';
               ctx.shadowBlur = 6;
@@ -458,14 +531,14 @@
                 box.x_max - box.x_min,
                 box.y_max - box.y_min
               );
-              ctx.shadowBlur = 0; // 重置阴影避免干扰文字
+              ctx.shadowBlur = 0;
+
               // 文字标签背景
               const label = `${box.class_name} ${box.confidence}`;
               ctx.font = 'bold 15px "Inter", "Segoe UI", Arial, sans-serif';
               const textWidth = ctx.measureText(label).width;
               const textHeight = 20;
 
-              // 半透明背景条
               ctx.fillStyle = 'rgba(225, 29, 72, 0.85)';
               ctx.shadowBlur = 8;
               ctx.shadowColor = 'rgba(0, 0, 0, 0.2)';
@@ -475,8 +548,8 @@
                 textWidth + 12,
                 textHeight + 4
               );
-              // 重置阴影
               ctx.shadowBlur = 0;
+
               // 白色文字
               ctx.fillStyle = 'white';
               ctx.font = 'bold 14px "Inter", "Segoe UI", Arial, sans-serif';
@@ -488,10 +561,9 @@
             });
           }
         };
-        // 使用原始文件对象生成URL，并在组件销毁时释放（简单场景可忽略）
         img.src = URL.createObjectURL(file);
 
-        // 收集CSV行（保持原始逻辑，但做防御判断）
+        // 收集 CSV 行
         if (data.boxes && Array.isArray(data.boxes)) {
           data.boxes.forEach(box => {
             allRows.push({
@@ -505,9 +577,6 @@
               inference_time_ms: data.inference_time_ms
             });
           });
-        } else {
-          // 如果没有boxes但返回了其他信息，也生成一行，避免空表（可选）
-          // 但为了保持与原逻辑一致，暂不添加
         }
       }
 
@@ -519,7 +588,7 @@
       detectBtn.textContent = '🔎 开始检测';
     };
 
-    // 渲染表格函数（保持核心逻辑，但处理空数据用美化提示）
+    // ---------- 渲染表格 ----------
     function renderTable() {
       if (!allRows.length) {
         renderEmptyTablePlaceholder();
@@ -538,7 +607,7 @@
       tableDiv.innerHTML = html;
     }
 
-    // 导出CSV（完全保持原有逻辑，并优化文件名）
+    // ---------- 导出 CSV ----------
     exportBtn.onclick = () => {
       if (!allRows.length) {
         alert('没有可导出的数据');
@@ -551,7 +620,6 @@
       const lines = [header.join(',')];
       allRows.forEach(r => {
         lines.push(header.map(h => {
-          // 处理可能包含逗号的字符串，简单起见保持原样，但如果image_id有逗号会破坏CSV，这里简单转义
           let val = r[h] !== undefined ? String(r[h]) : '';
           if (typeof val === 'string' && (val.includes(',') || val.includes('"'))) {
             val = `"${val.replace(/"/g, '""')}"`;
@@ -565,19 +633,8 @@
       a.href = URL.createObjectURL(blob);
       a.download = '电池包裂纹检测结果.csv';
       a.click();
-      URL.revokeObjectURL(a.href); // 释放内存
+      URL.revokeObjectURL(a.href);
     };
-
-    // 可选：当文件输入变化时，给出轻提示（不改变原有逻辑）
-    fileInput.addEventListener('change', () => {
-      // 只是提醒，无逻辑影响
-      if (fileInput.files.length > 0) {
-        // 静默
-      }
-    });
-
-    // 附加：如果用户重新选择文件，可以清理旧卡片？原有逻辑不清除，但点了检测会清除。保留用户预期。
-    // 为了更好的体验，可以在文件选择变化时不清除结果（因原始逻辑如此）
   })();
 </script>
 </body>

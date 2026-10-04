@@ -737,4 +737,620 @@
         const x2 = Math.max(state.drawStart.x, state.drawCurrent.x);
         const y2 = Math.max(state.drawStart.y, state.drawCurrent.y);
         if (x2 - x1 > 5 && y2 - y1 > 5) {
-          // 坐标转回原图坐标（当前已经是在原图坐标系
+          // 坐标转回原图坐标（当前已经是在原图坐标系）
+          const newBox = {
+            class_name: 'Manual',
+            confidence: 1.0,
+            x_min: Math.round(x1),
+            y_min: Math.round(y1),
+            x_max: Math.round(x2),
+            y_max: Math.round(y2),
+            manual: true
+          };
+          state.manualBoxes.push(newBox);
+          if (boxesRef) boxesRef.push(newBox);
+          if (onBoxesChange) onBoxesChange();
+        }
+        state.drawStart = null;
+        state.drawCurrent = null;
+        hideManualOverlay();
+      }
+    });
+
+    // 手动绘制框的覆盖层
+    let manualOverlayEl = null;
+    function ensureManualOverlay() {
+      if (!manualOverlayEl) {
+        manualOverlayEl = document.createElement('div');
+        manualOverlayEl.className = 'manual-overlay';
+        manualOverlayEl.style.display = 'none';
+        wrapper.appendChild(manualOverlayEl);
+      }
+      return manualOverlayEl;
+    }
+    function showManualOverlay() {
+      const el = ensureManualOverlay();
+      el.style.display = 'block';
+    }
+    function hideManualOverlay() {
+      const el = ensureManualOverlay();
+      el.style.display = 'none';
+    }
+    function updateManualOverlay() {
+      const el = ensureManualOverlay();
+      if (!state.drawStart || !state.drawCurrent) return;
+      const x1 = Math.min(state.drawStart.x, state.drawCurrent.x);
+      const y1 = Math.min(state.drawStart.y, state.drawCurrent.y);
+      const x2 = Math.max(state.drawStart.x, state.drawCurrent.x);
+      const y2 = Math.max(state.drawStart.y, state.drawCurrent.y);
+      const wrapRect = wrapper.getBoundingClientRect();
+      const scale = state.scale;
+      const tx = state.tx;
+      const ty = state.ty;
+      el.style.left = (x1 * scale + tx) + 'px';
+      el.style.top = (y1 * scale + ty) + 'px';
+      el.style.width = ((x2 - x1) * scale) + 'px';
+      el.style.height = ((y2 - y1) * scale) + 'px';
+    }
+
+    // 对外暴露接口
+    return {
+      state,
+      applyTransform,
+      updateZoomInfo,
+      zoomIn() {
+        const rect = wrapper.getBoundingClientRect();
+        const mx = rect.width / 2, my = rect.height / 2;
+        const newScale = Math.min(8, state.scale * 1.3);
+        state.tx = mx - (mx - state.tx) * (newScale / state.scale);
+        state.ty = my - (my - state.ty) * (newScale / state.scale);
+        state.scale = newScale;
+        applyTransform();
+        updateZoomInfo();
+      },
+      zoomOut() {
+        const rect = wrapper.getBoundingClientRect();
+        const mx = rect.width / 2, my = rect.height / 2;
+        const newScale = Math.max(0.3, state.scale / 1.3);
+        state.tx = mx - (mx - state.tx) * (newScale / state.scale);
+        state.ty = my - (my - state.ty) * (newScale / state.scale);
+        state.scale = newScale;
+        applyTransform();
+        updateZoomInfo();
+      },
+      reset() {
+        state.scale = 1;
+        state.tx = 0;
+        state.ty = 0;
+        applyTransform();
+        updateZoomInfo();
+      },
+      setMode(mode) {
+        state.mode = mode;
+      },
+      getManualBoxes() {
+        return state.manualBoxes;
+      },
+      redrawManual() {
+        // 清空并重新绘制所有手动框（用于删除误检后重新绘制）
+        // 手动画框由canvas绘制，这里不需要处理，由外部重绘canvas
+      }
+    };
+  }
+
+  // ============================================================
+  // 绘制canvas（含所有框、高亮某个框）
+  // ============================================================
+  function drawCanvas(canvas, img, boxes, highlightIndex = -1) {
+    canvas.width = img.naturalWidth;
+    canvas.height = img.naturalHeight;
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(img, 0, 0);
+
+    boxes.forEach((box, idx) => {
+      const isManual = box.manual === true || box.class_name === 'Manual';
+      if (box.class_name === 'Ok' && !isManual) return;
+
+      const isHighlight = idx === highlightIndex;
+      ctx.strokeStyle = isHighlight ? '#2563eb' : (isManual ? '#10b981' : '#e11d48');
+      ctx.lineWidth = isHighlight ? 5 : 3;
+      ctx.shadowColor = isHighlight ? 'rgba(37, 99, 235, 0.6)' : 'rgba(0,0,0,0.3)';
+      ctx.shadowBlur = isHighlight ? 12 : 6;
+      ctx.strokeRect(box.x_min, box.y_min, box.x_max - box.x_min, box.y_max - box.y_min);
+      ctx.shadowBlur = 0;
+
+      const label = isManual ? `手动 (${box.class_name})` : `${box.class_name} ${box.confidence}`;
+      ctx.font = 'bold 15px "Inter", "Segoe UI", Arial, sans-serif';
+      const textWidth = ctx.measureText(label).width;
+      const textHeight = 20;
+      const labelY = Math.max(box.y_min - textHeight - 2, 2);
+
+      ctx.fillStyle = isHighlight ? 'rgba(37, 99, 235, 0.92)' : (isManual ? 'rgba(16, 185, 129, 0.9)' : 'rgba(225, 29, 72, 0.85)');
+      ctx.shadowBlur = 8;
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.2)';
+      ctx.fillRect(box.x_min, labelY, textWidth + 12, textHeight + 4);
+      ctx.shadowBlur = 0;
+
+      ctx.fillStyle = 'white';
+      ctx.font = 'bold 14px "Inter", "Segoe UI", Arial, sans-serif';
+      ctx.fillText(label, box.x_min + 6, Math.max(box.y_min - 8, 16));
+    });
+  }
+
+  // ============================================================
+  // 检测按钮事件
+  // ============================================================
+  detectBtn.onclick = async () => {
+    allRows = [];
+    resultsDiv.innerHTML = '';
+    tableDiv.innerHTML = '';
+
+    const files = fileInput.files;
+    if (!files.length) {
+      alert('请先选择图片');
+      return;
+    }
+
+    detectBtn.disabled = true;
+    detectBtn.textContent = '⏳ 检测中...';
+
+    for (const file of files) {
+      const formData = new FormData();
+      formData.append('image', file);
+      if (currentModelFile) formData.append('model', currentModelFile);
+
+      let data;
+      try {
+        const resp = await fetch('/predict', { method: 'POST', body: formData });
+        data = await resp.json();
+      } catch (e) {
+        alert(`请求失败：${e.message} (文件: ${file.name})`);
+        continue;
+      }
+
+      // 创建卡片结构
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.innerHTML = `<h3>${data.image_id || file.name}</h3>`;
+
+      // canvas 容器
+      const wrapper = document.createElement('div');
+      wrapper.className = 'canvas-wrapper';
+      const canvas = document.createElement('canvas');
+      wrapper.appendChild(canvas);
+      card.appendChild(wrapper);
+
+      // 工具条
+      const toolbar = document.createElement('div');
+      toolbar.className = 'card-toolbar';
+      toolbar.innerHTML = `
+        <button class="tool-btn" data-action="zoom-in">＋</button>
+        <button class="tool-btn" data-action="zoom-out">－</button>
+        <button class="tool-btn" data-action="reset">↺ 重置</button>
+        <button class="tool-btn" data-action="draw">✎ 手动画框</button>
+        <button class="tool-btn danger" data-action="clear-manual">✕ 清手动框</button>
+        <span class="badge-count" data-role="count">0 框</span>
+        <span class="zoom-info">100%</span>
+      `;
+      card.appendChild(toolbar);
+      resultsDiv.appendChild(card);
+
+      const imageUrl = URL.createObjectURL(file);
+
+      // 图片加载
+      const img = new Image();
+      img.onload = () => {
+        const imageWidth = img.naturalWidth;
+        const imageHeight = img.naturalHeight;
+
+        // 存一份该卡片的框（引用 data.boxes）
+        const boxesRef = data.boxes || [];
+        data.boxes = boxesRef; // 确保存在
+
+        // 交互初始化
+        const interactions = attachCanvasInteractions(wrapper, canvas, boxesRef, () => {
+          // 重绘
+          drawCanvas(canvas, img, boxesRef);
+          updateCount();
+        });
+
+        // 首次绘制
+        drawCanvas(canvas, img, boxesRef);
+        updateCount();
+
+        function updateCount() {
+          const visible = boxesRef.filter(b => b.class_name !== 'Ok' || b.manual).length;
+          toolbar.querySelector('[data-role="count"]').textContent = visible + ' 框';
+        }
+
+        // 工具条按钮
+        toolbar.addEventListener('click', (e) => {
+          const btn = e.target.closest('.tool-btn');
+          if (!btn) return;
+          const action = btn.dataset.action;
+
+          if (action === 'zoom-in') interactions.zoomIn();
+          else if (action === 'zoom-out') interactions.zoomOut();
+          else if (action === 'reset') interactions.reset();
+          else if (action === 'draw') {
+            const isActive = btn.classList.toggle('active');
+            interactions.setMode(isActive ? 'draw' : 'pan');
+            // 切换样式提示
+            let hint = wrapper.querySelector('.draw-hint');
+            if (isActive) {
+              if (!hint) {
+                hint = document.createElement('div');
+                hint.className = 'draw-hint';
+                hint.textContent = '✎ 拖拽绘制新框';
+                wrapper.appendChild(hint);
+              }
+            } else {
+              if (hint) hint.remove();
+            }
+          }
+          else if (action === 'clear-manual') {
+            // 删除所有手动框
+            for (let i = boxesRef.length - 1; i >= 0; i--) {
+              if (boxesRef[i].manual) boxesRef.splice(i, 1);
+            }
+            drawCanvas(canvas, img, boxesRef);
+            updateCount();
+          }
+        });
+
+        // 卡片内的框点击：点击canvas上的检测框自动放大
+        wrapper.addEventListener('click', (e) => {
+          if (interactions.state.mode === 'draw') return;
+          if (interactions.state.dragging) return;
+          // 计算点击位置对应的原图坐标
+          const rect = wrapper.getBoundingClientRect();
+          const x = (e.clientX - rect.left - interactions.state.tx) / interactions.state.scale;
+          const y = (e.clientY - rect.top - interactions.state.ty) / interactions.state.scale;
+
+          // 找到点击的框
+          let hitIndex = -1;
+          for (let i = boxesRef.length - 1; i >= 0; i--) {
+            const b = boxesRef[i];
+            if (b.class_name === 'Ok' && !b.manual) continue;
+            if (x >= b.x_min && x <= b.x_max && y >= b.y_min && y <= b.y_max) {
+              hitIndex = i;
+              break;
+            }
+          }
+          if (hitIndex >= 0) {
+            // 放大到该框
+            zoomToBox(wrapper, canvas, interactions, boxesRef[hitIndex], img);
+            drawCanvas(canvas, img, boxesRef, hitIndex);
+            // 闪烁提示
+            wrapper.classList.add('box-flash');
+            setTimeout(() => wrapper.classList.remove('box-flash'), 800);
+          }
+        });
+
+        // 保存到历史记录
+        const detectCount = boxesRef.filter(b => b.class_name !== 'Ok' || b.manual).length;
+        const inferenceTime = data.inference_time_ms || 0;
+        historyItems.push({
+          id: Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+          fileName: data.image_id || file.name,
+          imageUrl: imageUrl,
+          detectCount: detectCount,
+          inferenceTime: inferenceTime,
+          timestamp: Date.now(),
+          boxes: boxesRef,
+          imageWidth,
+          imageHeight
+        });
+        renderHistory();
+
+        // 收集 CSV
+        boxesRef.forEach(box => {
+          if (box.class_name === 'Ok' && !box.manual) return;
+          allRows.push({
+            image_id: data.image_id || file.name,
+            class_name: box.manual ? 'Manual' : box.class_name,
+            confidence: box.confidence,
+            x_min: box.x_min,
+            y_min: box.y_min,
+            x_max: box.x_max,
+            y_max: box.y_max,
+            inference_time_ms: data.inference_time_ms
+          });
+        });
+        renderTable();
+      };
+      img.src = imageUrl;
+    }
+
+    detectBtn.disabled = false;
+    detectBtn.textContent = '🔎 开始检测';
+  };
+
+  // 缩放至某个框
+  function zoomToBox(wrapper, canvas, interactions, box, img) {
+    const rect = wrapper.getBoundingClientRect();
+    const boxW = box.x_max - box.x_min;
+    const boxH = box.y_max - box.y_min;
+    if (boxW <= 0 || boxH <= 0) return;
+    // 目标：让框大致占满容器的 70%
+    const scaleX = rect.width * 0.7 / boxW;
+    const scaleY = rect.height * 0.7 / boxH;
+    const newScale = Math.min(8, Math.max(0.5, Math.min(scaleX, scaleY)));
+    const cx = (box.x_min + box.x_max) / 2;
+    const cy = (box.y_min + box.y_max) / 2;
+    interactions.state.scale = newScale;
+    interactions.state.tx = rect.width / 2 - cx * newScale;
+    interactions.state.ty = rect.height / 2 - cy * newScale;
+    interactions.applyTransform();
+    interactions.updateZoomInfo();
+  }
+
+  // ============================================================
+  // 历史渲染
+  // ============================================================
+  function renderHistory() {
+    historyCount.textContent = historyItems.length + ' 张';
+    if (!historyItems.length) {
+      historyGrid.innerHTML = '<div class="history-empty">暂无检测历史，上传图片并检测后将自动保存在此处</div>';
+      return;
+    }
+    let html = '';
+    historyItems.slice().reverse().forEach((item) => {
+      html += `
+        <div class="history-item" data-id="${item.id}" title="点击查看大图">
+          <img src="${item.imageUrl}" alt="${item.fileName}" loading="lazy">
+          <span class="history-timestamp">${formatTime(item.timestamp)}</span>
+          <div class="history-item-overlay">
+            <span class="name">${escapeHtml(item.fileName)}</span>
+            <div class="stats">
+              <span>🔍 ${item.detectCount} 框</span>
+              <span>⏱ ${item.inferenceTime ? item.inferenceTime.toFixed(0) + 'ms' : '--'}</span>
+            </div>
+          </div>
+        </div>
+      `;
+    });
+    historyGrid.innerHTML = html;
+
+    historyGrid.querySelectorAll('.history-item').forEach(el => {
+      el.addEventListener('click', () => {
+        const id = el.dataset.id;
+        const item = historyItems.find(it => it.id == id);
+        if (item) openModal(item);
+      });
+    });
+  }
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    return String(str).replace(/[&<>"]/g, function(m) {
+      if (m === '&') return '&amp;';
+      if (m === '<') return '&lt;';
+      if (m === '>') return '&gt;';
+      if (m === '"') return '&quot;';
+      return m;
+    });
+  }
+
+  function formatTime(ts) {
+    if (!ts) return '';
+    const d = new Date(ts);
+    return d.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  }
+
+  // ============================================================
+  // 表格
+  // ============================================================
+  function renderTable() {
+    if (!allRows.length) {
+      renderEmptyTablePlaceholder();
+      return;
+    }
+    const header = ['image_id', 'class_name', 'confidence', 'x_min', 'y_min', 'x_max', 'y_max', 'inference_time_ms'];
+    let html = '<table><thead><tr>' + header.map(h => `<th>${h}</th>`).join('') + '</tr></thead><tbody>';
+    allRows.forEach(r => {
+      html += '<tr>' + header.map(h => `<td>${r[h] !== undefined ? r[h] : ''}</td>`).join('') + '</tr>';
+    });
+    html += '</tbody></table>';
+    tableDiv.innerHTML = html;
+  }
+
+  // ============================================================
+  // 导出CSV
+  // ============================================================
+  exportBtn.onclick = () => {
+    if (!allRows.length) {
+      alert('没有可导出的数据');
+      return;
+    }
+    const header = ['image_id', 'class_name', 'confidence', 'x_min', 'y_min', 'x_max', 'y_max', 'inference_time_ms'];
+    const lines = [header.join(',')];
+    allRows.forEach(r => {
+      lines.push(header.map(h => {
+        let val = r[h] !== undefined ? String(r[h]) : '';
+        if (typeof val === 'string' && (val.includes(',') || val.includes('"'))) {
+          val = `"${val.replace(/"/g, '""')}"`;
+        }
+        return val;
+      }).join(','));
+    });
+    const csv = lines.join('\n');
+    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = '电池包裂纹检测结果.csv';
+    a.click();
+    URL.revokeObjectURL(a.href);
+  };
+
+  // ============================================================
+  // 模态（含缩放、拖拽、点框放大）
+  // ============================================================
+  let modalInteractions = null;
+  let modalCurrentItem = null;
+  let modalCurrentHighlight = -1;
+
+  function openModal(item) {
+    modalCurrentItem = item;
+    modalCurrentHighlight = -1;
+    modalImage.src = item.imageUrl;
+    modalCaption.textContent = item.fileName || '检测图片';
+    modalDate.textContent = item.timestamp ? new Date(item.timestamp).toLocaleString('zh-CN') : '';
+    modalManualOverlay.style.display = 'none';
+    modalBackdrop.classList.add('active');
+
+    // 等图片加载完成后再初始化交互
+    modalImage.onload = () => {
+      // 先重置变换
+      modalImage.style.transform = 'translate(0,0) scale(1)';
+      // 由于图片是 <img> 而非 canvas，我们用 CSS transform 实现缩放拖拽
+      setupModalInteractions();
+    };
+  }
+
+  function setupModalInteractions() {
+    // 重新创建，避免多次绑定
+    const wrapper = modalCanvasWrapper;
+
+    // 清理旧监听（通过替换 clone 重建更简单，但这里简单处理：标记全局）
+    if (modalInteractions) {
+      // 简单解绑所有（用新的方式）
+      // 这里通过移除所有事件（利用替换节点方式）
+      const newWrapper = wrapper.cloneNode(false);
+      wrapper.parentNode.replaceChild(newWrapper, wrapper);
+      // 重新获取引用
+      window._modalWrapper = newWrapper;
+      // 由于 modalCanvasWrapper 是 const 引用，我们需要重新赋值，但不可能，改用 window 引用
+      // 为简化：改用 id 直接重新查询
+    }
+
+    // 由于上面的复杂性，改为：不使用闭包里的 const，直接用 document.getElementById
+    const w = document.getElementById('modalCanvasWrapper');
+    const img = document.getElementById('modalImage');
+
+    // 使用与卡片一致的手写交互但作用于 img
+    const state = {
+      scale: 1, tx: 0, ty: 0,
+      isPanning: false, panStartX: 0, panStartY: 0, startTx: 0, startTy: 0
+    };
+
+    function apply() {
+      img.style.transform = `translate(${state.tx}px, ${state.ty}px) scale(${state.scale})`;
+    }
+
+    // 滚轮缩放
+    w.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      const rect = w.getBoundingClientRect();
+      const mx = e.clientX - rect.left;
+      const my = e.clientY - rect.top;
+      const delta = -e.deltaY * 0.0015;
+      const newScale = Math.min(8, Math.max(0.3, state.scale * (1 + delta)));
+      state.tx = mx - (mx - state.tx) * (newScale / state.scale);
+      state.ty = my - (my - state.ty) * (newScale / state.scale);
+      state.scale = newScale;
+      apply();
+    }, { passive: false });
+
+    // 拖拽
+    w.addEventListener('mousedown', (e) => {
+      if (e.button !== 0) return;
+      state.isPanning = true;
+      state.panStartX = e.clientX;
+      state.panStartY = e.clientY;
+      state.startTx = state.tx;
+      state.startTy = state.ty;
+      w.classList.add('grabbing');
+    });
+    window.addEventListener('mousemove', (e) => {
+      if (state.isPanning) {
+        state.tx = state.startTx + (e.clientX - state.panStartX);
+        state.ty = state.startTy + (e.clientY - state.panStartY);
+        apply();
+      }
+    });
+    window.addEventListener('mouseup', () => {
+      state.isPanning = false;
+      w.classList.remove('grabbing');
+    });
+
+    // 点击图片（模态）——如果点中框，放大到该框
+    img.addEventListener('click', (e) => {
+      if (!modalCurrentItem || !modalCurrentItem.boxes) return;
+      const rect = w.getBoundingClientRect();
+      const x = (e.clientX - rect.left - state.tx) / state.scale;
+      const y = (e.clientY - rect.top - state.ty) / state.scale;
+      const boxes = modalCurrentItem.boxes;
+      let hit = -1;
+      for (let i = boxes.length - 1; i >= 0; i--) {
+        const b = boxes[i];
+        if (b.class_name === 'Ok' && !b.manual) continue;
+        if (x >= b.x_min && x <= b.x_max && y >= b.y_min && y <= b.y_max) {
+          hit = i; break;
+        }
+      }
+      if (hit >= 0) {
+        const b = boxes[hit];
+        const boxW = b.x_max - b.x_min;
+        const boxH = b.y_max - b.y_min;
+        if (boxW > 0 && boxH > 0) {
+          const scaleX = rect.width * 0.7 / boxW;
+          const scaleY = rect.height * 0.7 / boxH;
+          const newScale = Math.min(8, Math.max(0.5, Math.min(scaleX, scaleY)));
+          const cx = (b.x_min + b.x_max) / 2;
+          const cy = (b.y_min + b.y_max) / 2;
+          state.scale = newScale;
+          state.tx = rect.width / 2 - cx * newScale;
+          state.ty = rect.height / 2 - cy * newScale;
+          apply();
+          // 闪烁
+          w.classList.add('box-flash');
+          setTimeout(() => w.classList.remove('box-flash'), 800);
+        }
+      }
+    });
+
+    // 模态按钮
+    document.getElementById('modalZoomIn').onclick = () => {
+      const rect = w.getBoundingClientRect();
+      const mx = rect.width / 2, my = rect.height / 2;
+      const ns = Math.min(8, state.scale * 1.3);
+      state.tx = mx - (mx - state.tx) * (ns / state.scale);
+      state.ty = my - (my - state.ty) * (ns / state.scale);
+      state.scale = ns;
+      apply();
+    };
+    document.getElementById('modalZoomOut').onclick = () => {
+      const rect = w.getBoundingClientRect();
+      const mx = rect.width / 2, my = rect.height / 2;
+      const ns = Math.max(0.3, state.scale / 1.3);
+      state.tx = mx - (mx - state.tx) * (ns / state.scale);
+      state.ty = my - (my - state.ty) * (ns / state.scale);
+      state.scale = ns;
+      apply();
+    };
+    document.getElementById('modalReset').onclick = () => {
+      state.scale = 1; state.tx = 0; state.ty = 0;
+      apply();
+    };
+  }
+
+  modalClose.addEventListener('click', closeModal);
+  modalBackdrop.addEventListener('click', (e) => {
+    if (e.target === modalBackdrop) closeModal();
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && modalBackdrop.classList.contains('active')) closeModal();
+  });
+
+  function closeModal() {
+    modalBackdrop.classList.remove('active');
+    modalImage.src = '';
+    modalCurrentItem = null;
+  }
+
+})();
+</script>
+</body>
+</html>

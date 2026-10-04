@@ -5,12 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>电池包裂纹检测 · 智能视觉</title>
   <style>
-    /* 全局重置与字体 */
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
       font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
@@ -21,7 +16,6 @@
       line-height: 1.5;
     }
 
-    /* 主容器卡片效果 */
     .app-container {
       max-width: 1400px;
       margin: 0 auto;
@@ -29,13 +23,11 @@
       backdrop-filter: blur(10px);
       -webkit-backdrop-filter: blur(10px);
       border-radius: 2.5rem;
-      box-shadow: 0 25px 50px -12px rgba(0, 20, 30, 0.25),
-                  inset 0 1px 2px rgba(255, 255, 255, 0.7);
+      box-shadow: 0 25px 50px -12px rgba(0, 20, 30, 0.25), inset 0 1px 2px rgba(255, 255, 255, 0.7);
       padding: 2rem 2rem 2.5rem;
       border: 1px solid rgba(255, 255, 255, 0.6);
     }
 
-    /* 标题区 */
     h1 {
       font-size: 2.25rem;
       font-weight: 600;
@@ -49,14 +41,12 @@
       gap: 0.75rem;
       margin-bottom: 1.25rem;
     }
-
     h1::before {
       content: "🔍";
       font-size: 2.25rem;
       filter: drop-shadow(0 4px 6px rgba(0, 120, 180, 0.2));
     }
 
-    /* 上传/按钮操作栏 */
     .action-bar {
       display: flex;
       flex-wrap: wrap;
@@ -71,7 +61,6 @@
       border: 1px solid rgba(255, 255, 255, 0.9);
     }
 
-    /* 文件选择控件美化 */
     input[type="file"] {
       font-size: 0.9rem;
       padding: 0.6rem 1rem;
@@ -84,12 +73,7 @@
       transition: all 0.2s ease;
       box-shadow: 0 1px 3px rgba(0,0,0,0.02);
     }
-
-    input[type="file"]:hover {
-      border-color: #5fa3c0;
-      background: #f9fdff;
-    }
-
+    input[type="file"]:hover { border-color: #5fa3c0; background: #f9fdff; }
     input[type="file"]::file-selector-button {
       background: #e8f0f7;
       border: none;
@@ -101,54 +85,19 @@
       cursor: pointer;
       transition: background 0.2s;
     }
+    input[type="file"]::file-selector-button:hover { background: #d0e2f0; }
 
-    input[type="file"]::file-selector-button:hover {
-      background: #d0e2f0;
-    }
-
-    /* 模型上传专用样式 */
-    .model-upload-row {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 1rem;
-      width: 100%;
-    }
-
-    .model-input-wrapper {
-      position: relative;
-      flex: 1 1 320px;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    .model-input-wrapper input[type="file"] {
-      flex: 1;
-      padding-right: 3rem;
-    }
-
+    .model-upload-row { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; width: 100%; }
+    .model-input-wrapper { position: relative; flex: 1 1 320px; display: flex; align-items: center; gap: 0.5rem; }
+    .model-input-wrapper input[type="file"] { flex: 1; padding-right: 3rem; }
     .model-status {
-      position: absolute;
-      right: 1rem;
-      top: 50%;
-      transform: translateY(-50%);
-      font-size: 0.75rem;
-      font-weight: 600;
-      padding: 0.2rem 0.6rem;
-      border-radius: 1rem;
-      background: #e0f0e8;
-      color: #0c6b4b;
-      pointer-events: none;
-      white-space: nowrap;
+      position: absolute; right: 1rem; top: 50%; transform: translateY(-50%);
+      font-size: 0.75rem; font-weight: 600; padding: 0.2rem 0.6rem;
+      border-radius: 1rem; background: #e0f0e8; color: #0c6b4b;
+      pointer-events: none; white-space: nowrap;
     }
+    .model-status.empty { background: #f0e8e0; color: #966b0c; }
 
-    .model-status.empty {
-      background: #f0e8e0;
-      color: #966b0c;
-    }
-
-    /* 通用按钮 */
     button {
       padding: 0.75rem 1.75rem;
       font-size: 0.95rem;
@@ -167,50 +116,26 @@
       border: 1px solid #d9e8f2;
       letter-spacing: 0.01em;
     }
-
     button:hover {
       background: #f2faff;
       border-color: #8fbcd4;
       transform: translateY(-1px);
       box-shadow: 0 12px 18px -8px rgba(0, 100, 140, 0.25);
     }
-
-    button:active {
-      transform: translateY(1px);
-      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
-    }
-
-    button:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-      transform: none;
-      box-shadow: none;
-    }
+    button:active { transform: translateY(1px); box-shadow: 0 2px 6px rgba(0,0,0,0.05); }
+    button:disabled { opacity: 0.6; cursor: not-allowed; transform: none; box-shadow: none; }
 
     #detectBtn {
       background: linear-gradient(120deg, #19647e, #2691b3);
-      border: none;
-      color: white;
-      box-shadow: 0 8px 18px -6px #19647e80;
+      border: none; color: white; box-shadow: 0 8px 18px -6px #19647e80;
     }
-
     #detectBtn:hover:not(:disabled) {
       background: linear-gradient(120deg, #105166, #1f7d9c);
-      box-shadow: 0 12px 22px -8px #19647ecc;
-      color: white;
+      box-shadow: 0 12px 22px -8px #19647ecc; color: white;
     }
+    #exportBtn { background: rgba(255, 255, 255, 0.9); border: 1px solid #a6c8dd; color: #105166; }
+    #exportBtn:hover { background: #e5f2fa; }
 
-    #exportBtn {
-      background: rgba(255, 255, 255, 0.9);
-      border: 1px solid #a6c8dd;
-      color: #105166;
-    }
-
-    #exportBtn:hover {
-      background: #e5f2fa;
-    }
-
-    /* 检测结果卡片网格 */
     #results {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
@@ -218,22 +143,18 @@
       margin: 2rem 0 2rem;
     }
 
-    /* 卡片美化 */
     .card {
       background: rgba(255, 255, 255, 0.8);
       backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
       border: 1px solid rgba(255, 255, 255, 0.9);
       border-radius: 2rem;
       padding: 1.25rem 1.25rem 1rem;
       margin: 0;
-      box-shadow: 0 20px 30px -12px rgba(0, 40, 60, 0.15),
-                  inset 0 1px 0 white;
+      box-shadow: 0 20px 30px -12px rgba(0, 40, 60, 0.15), inset 0 1px 0 white;
       transition: all 0.25s ease;
       display: flex;
       flex-direction: column;
     }
-
     .card:hover {
       box-shadow: 0 28px 38px -16px rgba(0, 80, 110, 0.25);
       background: rgba(255, 255, 255, 0.92);
@@ -241,37 +162,139 @@
     }
 
     .card h3 {
-      font-size: 1.1rem;
-      font-weight: 600;
-      color: #1d4053;
+      font-size: 1.1rem; font-weight: 600; color: #1d4053;
       padding: 0 0 0.6rem 0.1rem;
       border-bottom: 1px dashed #c2dae9;
       margin-bottom: 0.9rem;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
+      display: flex; align-items: center; gap: 0.5rem;
       word-break: break-word;
     }
+    .card h3::before { content: "📷"; font-size: 1.2rem; opacity: 0.8; }
 
-    .card h3::before {
-      content: "📷";
-      font-size: 1.2rem;
-      opacity: 0.8;
-    }
-
-    /* canvas 样式 */
-    canvas {
-      max-width: 100%;
-      height: auto;
+    /* ========== 画布容器（支持缩放/拖拽） ========== */
+    .canvas-wrapper {
+      position: relative;
+      overflow: hidden;
       border-radius: 1.2rem;
       border: 2px solid rgba(255, 255, 255, 0.9);
       box-shadow: 0 8px 18px -8px rgba(0, 0, 0, 0.2);
       background: #f0f5fa;
+      cursor: grab;
+      touch-action: none;
+      user-select: none;
+    }
+    .canvas-wrapper.grabbing { cursor: grabbing; }
+    .canvas-wrapper canvas {
       display: block;
-      transition: border 0.2s;
+      max-width: 100%;
+      height: auto;
+      border-radius: 1rem;
+      transition: transform 0.08s linear;
+      transform-origin: 0 0;
+      pointer-events: none;
     }
 
-    /* 表格区域 */
+    /* 卡片内工具条 */
+    .card-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin-top: 0.75rem;
+      padding-top: 0.6rem;
+      border-top: 1px dashed #d4e4f0;
+      align-items: center;
+    }
+    .card-toolbar .tool-btn {
+      padding: 0.4rem 0.85rem;
+      font-size: 0.78rem;
+      border-radius: 2rem;
+      background: #f0f7fc;
+      border: 1px solid #cfe2ef;
+      color: #1d5c7a;
+      box-shadow: none;
+      font-weight: 500;
+    }
+    .card-toolbar .tool-btn:hover {
+      background: #e2f0fa;
+      border-color: #9cc4dc;
+      transform: none;
+      box-shadow: 0 4px 8px -4px rgba(0,80,120,0.2);
+    }
+    .card-toolbar .tool-btn.active {
+      background: linear-gradient(120deg, #19647e, #2691b3);
+      color: white;
+      border-color: transparent;
+      box-shadow: 0 4px 10px -4px #19647e99;
+    }
+    .card-toolbar .tool-btn.danger {
+      color: #b91c4c;
+      background: #fdf0f3;
+      border-color: #f2c6d3;
+    }
+    .card-toolbar .tool-btn.danger:hover {
+      background: #fbe0e7;
+      border-color: #e99aae;
+    }
+    .card-toolbar .zoom-info {
+      margin-left: auto;
+      font-size: 0.72rem;
+      color: #5f869c;
+      background: #edf5fb;
+      padding: 0.25rem 0.7rem;
+      border-radius: 1rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+    .card-toolbar .badge-count {
+      font-size: 0.72rem;
+      background: #e6f0f7;
+      color: #175874;
+      padding: 0.25rem 0.7rem;
+      border-radius: 1rem;
+      font-weight: 600;
+    }
+
+    /* 手动画框时提示 */
+    .draw-hint {
+      position: absolute;
+      top: 0.6rem;
+      left: 0.6rem;
+      background: rgba(25, 100, 126, 0.9);
+      color: white;
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 0.25rem 0.7rem;
+      border-radius: 1rem;
+      pointer-events: none;
+      backdrop-filter: blur(4px);
+      animation: pulseHint 1.4s infinite;
+    }
+    @keyframes pulseHint {
+      0%, 100% { opacity: 0.95; }
+      50% { opacity: 0.6; }
+    }
+
+    /* 手动绘制的框（绿色虚线） */
+    .manual-overlay {
+      position: absolute;
+      border: 2px dashed #10b981;
+      background: rgba(16, 185, 129, 0.12);
+      border-radius: 4px;
+      pointer-events: none;
+      box-sizing: border-box;
+    }
+
+    /* 框选放大的高亮闪烁 */
+    .box-flash {
+      animation: boxFlash 0.8s ease-out;
+    }
+    @keyframes boxFlash {
+      0% { box-shadow: 0 0 0 0 rgba(25, 100, 126, 0.7); }
+      70% { box-shadow: 0 0 0 14px rgba(25, 100, 126, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(25, 100, 126, 0); }
+    }
+
+    /* 表格 */
     #tableDiv {
       background: rgba(255, 255, 255, 0.75);
       backdrop-filter: blur(8px);
@@ -282,350 +305,204 @@
       overflow-x: auto;
       margin-top: 0.5rem;
     }
-
     table {
-      border-collapse: collapse;
-      width: 100%;
-      font-size: 0.875rem;
-      border-radius: 1rem;
-      overflow: hidden;
-      background: white;
+      border-collapse: collapse; width: 100%; font-size: 0.875rem;
+      border-radius: 1rem; overflow: hidden; background: white;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
     }
-
     th {
-      background: #e6f0f7;
-      color: #104052;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.02em;
-      font-size: 0.75rem;
-      padding: 0.9rem 0.8rem;
-      white-space: nowrap;
-      border-bottom: 2px solid #b9d3e3;
+      background: #e6f0f7; color: #104052; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.02em;
+      font-size: 0.75rem; padding: 0.9rem 0.8rem;
+      white-space: nowrap; border-bottom: 2px solid #b9d3e3;
     }
-
     td {
-      padding: 0.75rem 0.8rem;
-      border-bottom: 1px solid #dae8f2;
-      color: #173f52;
-      font-weight: 400;
-      white-space: nowrap;
+      padding: 0.75rem 0.8rem; border-bottom: 1px solid #dae8f2;
+      color: #173f52; font-weight: 400; white-space: nowrap;
     }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background-color: #f4faff; }
 
-    tr:last-child td {
-      border-bottom: none;
-    }
-
-    tr:hover td {
-      background-color: #f4faff;
-    }
-
-    /* 空状态及提示 */
     .empty-message {
-      text-align: center;
-      padding: 2rem 1rem;
-      color: #557e93;
-      font-style: italic;
+      text-align: center; padding: 2rem 1rem;
+      color: #557e93; font-style: italic;
     }
 
-    /* 小提示文本（行内） */
     .hint {
-      font-size: 0.85rem;
-      color: #4b7188;
-      margin-left: auto;
-      display: flex;
-      align-items: center;
-      gap: 0.3rem;
+      font-size: 0.85rem; color: #4b7188;
+      margin-left: auto; display: flex; align-items: center; gap: 0.3rem;
     }
-
     .hint i {
-      font-style: normal;
-      background: #dfebf3;
-      border-radius: 1rem;
-      padding: 0.2rem 0.7rem;
-      font-size: 0.8rem;
+      font-style: normal; background: #dfebf3;
+      border-radius: 1rem; padding: 0.2rem 0.7rem; font-size: 0.8rem;
     }
 
-    /* 滚动条美化 */
-    ::-webkit-scrollbar {
-      width: 8px;
-      height: 8px;
-    }
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: #e2eef8; border-radius: 10px; }
+    ::-webkit-scrollbar-thumb { background: #9bbfd6; border-radius: 10px; }
+    ::-webkit-scrollbar-thumb:hover { background: #719bb5; }
 
-    ::-webkit-scrollbar-track {
-      background: #e2eef8;
-      border-radius: 10px;
-    }
-
-    ::-webkit-scrollbar-thumb {
-      background: #9bbfd6;
-      border-radius: 10px;
-    }
-
-    ::-webkit-scrollbar-thumb:hover {
-      background: #719bb5;
-    }
-
-    /* ========== 新增：检测历史窗口 ========== */
+    /* 历史 */
     .history-section {
       margin-top: 2.5rem;
       background: rgba(255, 255, 255, 0.65);
       backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
       border-radius: 2rem;
       border: 1px solid rgba(255, 255, 255, 0.9);
       box-shadow: 0 15px 30px -15px rgba(0, 40, 60, 0.2);
       overflow: hidden;
       transition: all 0.25s ease;
     }
-
     .history-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+      display: flex; justify-content: space-between; align-items: center;
       padding: 1.25rem 1.75rem;
       background: linear-gradient(135deg, #eef6fc, #deecf7);
       border-bottom: 1px solid #c9deed;
-      cursor: pointer;
-      user-select: none;
+      cursor: pointer; user-select: none;
       transition: background 0.2s;
     }
-
-    .history-header:hover {
-      background: linear-gradient(135deg, #e6f2fc, #d4e6f4);
-    }
-
+    .history-header:hover { background: linear-gradient(135deg, #e6f2fc, #d4e6f4); }
     .history-header h2 {
-      font-size: 1.25rem;
-      font-weight: 600;
-      color: #124257;
-      display: flex;
-      align-items: center;
-      gap: 0.6rem;
+      font-size: 1.25rem; font-weight: 600; color: #124257;
+      display: flex; align-items: center; gap: 0.6rem;
     }
-
-    .history-header h2::before {
-      content: "🖼️";
-      font-size: 1.4rem;
-    }
-
+    .history-header h2::before { content: "🖼️"; font-size: 1.4rem; }
     .history-badge {
-      background: #19647e;
-      color: white;
-      font-size: 0.75rem;
-      font-weight: 700;
-      padding: 0.25rem 0.75rem;
-      border-radius: 2rem;
+      background: #19647e; color: white; font-size: 0.75rem;
+      font-weight: 700; padding: 0.25rem 0.75rem; border-radius: 2rem;
       box-shadow: 0 2px 6px rgba(25, 100, 126, 0.3);
     }
-
     .history-toggle-icon {
-      font-size: 1rem;
-      color: #2e6f8f;
-      transition: transform 0.3s ease;
-      margin-left: 0.75rem;
+      font-size: 1rem; color: #2e6f8f;
+      transition: transform 0.3s ease; margin-left: 0.75rem;
     }
-
-    .history-section.collapsed .history-toggle-icon {
-      transform: rotate(-90deg);
-    }
-
+    .history-section.collapsed .history-toggle-icon { transform: rotate(-90deg); }
     .history-section.collapsed .history-body {
-      max-height: 0;
-      padding-top: 0;
-      padding-bottom: 0;
-      opacity: 0;
-      pointer-events: none;
+      max-height: 0; padding-top: 0; padding-bottom: 0;
+      opacity: 0; pointer-events: none;
     }
-
     .history-body {
-      max-height: 800px;
-      overflow-y: auto;
-      padding: 1.5rem 1.75rem 1.75rem;
-      opacity: 1;
-      transition: max-height 0.4s cubic-bezier(0.2, 0.9, 0.4, 1), 
-                  padding 0.3s ease, 
-                  opacity 0.25s ease;
+      max-height: 800px; overflow-y: auto;
+      padding: 1.5rem 1.75rem 1.75rem; opacity: 1;
+      transition: max-height 0.4s cubic-bezier(0.2, 0.9, 0.4, 1), padding 0.3s ease, opacity 0.25s ease;
     }
-
-    /* 历史画廊网格 */
     .history-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
       gap: 1rem;
     }
-
     .history-item {
-      position: relative;
-      border-radius: 1.25rem;
-      overflow: hidden;
-      background: #ffffff;
-      border: 2px solid rgba(255, 255, 255, 0.95);
+      position: relative; border-radius: 1.25rem; overflow: hidden;
+      background: #ffffff; border: 2px solid rgba(255, 255, 255, 0.95);
       box-shadow: 0 6px 14px -6px rgba(0, 40, 60, 0.2);
       aspect-ratio: 4 / 3;
       transition: all 0.25s cubic-bezier(0.2, 0.9, 0.3, 1);
       cursor: pointer;
       animation: fadeIn 0.3s ease-out;
     }
-
     .history-item:hover {
       transform: translateY(-4px) scale(1.02);
       box-shadow: 0 16px 24px -10px rgba(0, 80, 110, 0.35);
-      border-color: #8fc1db;
-      z-index: 2;
+      border-color: #8fc1db; z-index: 2;
     }
-
     .history-item img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: block;
-      transition: transform 0.35s ease;
+      width: 100%; height: 100%; object-fit: cover;
+      display: block; transition: transform 0.35s ease;
     }
-
-    .history-item:hover img {
-      transform: scale(1.05);
-    }
-
-    /* 图片底部信息条 */
+    .history-item:hover img { transform: scale(1.05); }
     .history-item-overlay {
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      right: 0;
+      position: absolute; bottom: 0; left: 0; right: 0;
       background: linear-gradient(to top, rgba(10, 35, 50, 0.85), transparent);
-      padding: 1.25rem 0.6rem 0.5rem;
-      color: white;
-      font-size: 0.7rem;
-      display: flex;
-      flex-direction: column;
-      gap: 0.15rem;
-      pointer-events: none;
+      padding: 1.25rem 0.6rem 0.5rem; color: white; font-size: 0.7rem;
+      display: flex; flex-direction: column; gap: 0.15rem; pointer-events: none;
     }
-
     .history-item-overlay .name {
-      font-weight: 600;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      font-size: 0.75rem;
+      font-weight: 600; white-space: nowrap; overflow: hidden;
+      text-overflow: ellipsis; font-size: 0.75rem;
       text-shadow: 0 1px 3px rgba(0,0,0,0.5);
     }
-
     .history-item-overlay .stats {
-      display: flex;
-      justify-content: space-between;
-      font-size: 0.65rem;
-      opacity: 0.9;
+      display: flex; justify-content: space-between;
+      font-size: 0.65rem; opacity: 0.9;
     }
-
-    /* 时间戳徽章 */
     .history-timestamp {
-      position: absolute;
-      top: 0.5rem;
-      right: 0.5rem;
-      background: rgba(0, 0, 0, 0.55);
-      backdrop-filter: blur(4px);
-      color: #fff;
-      font-size: 0.6rem;
-      font-weight: 500;
-      padding: 0.15rem 0.5rem;
-      border-radius: 1rem;
-      letter-spacing: 0.02em;
+      position: absolute; top: 0.5rem; right: 0.5rem;
+      background: rgba(0, 0, 0, 0.55); backdrop-filter: blur(4px);
+      color: #fff; font-size: 0.6rem; font-weight: 500;
+      padding: 0.15rem 0.5rem; border-radius: 1rem; letter-spacing: 0.02em;
     }
-
-    /* 无历史记录时的提示 */
     .history-empty {
-      text-align: center;
-      padding: 2.5rem 1rem;
-      color: #6a8fa3;
-      font-style: italic;
-      font-size: 0.95rem;
+      text-align: center; padding: 2.5rem 1rem;
+      color: #6a8fa3; font-style: italic; font-size: 0.95rem;
     }
-
     .history-empty::before {
-      content: "📭";
-      display: block;
-      font-size: 2rem;
-      margin-bottom: 0.5rem;
-      opacity: 0.6;
-      font-style: normal;
+      content: "📭"; display: block; font-size: 2rem;
+      margin-bottom: 0.5rem; opacity: 0.6; font-style: normal;
     }
 
-    /* 点击查看大图模态 */
+    /* 模态 */
     .modal-backdrop {
-      display: none;
-      position: fixed;
-      inset: 0;
+      display: none; position: fixed; inset: 0;
       background: rgba(8, 25, 35, 0.7);
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
-      z-index: 1000;
-      justify-content: center;
-      align-items: center;
-      padding: 2rem;
-      animation: fadeIn 0.2s ease;
+      backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+      z-index: 1000; justify-content: center; align-items: center;
+      padding: 2rem; animation: fadeIn 0.2s ease;
     }
-
-    .modal-backdrop.active {
-      display: flex;
-    }
-
+    .modal-backdrop.active { display: flex; }
     .modal-content {
-      max-width: 90vw;
-      max-height: 90vh;
-      border-radius: 1.5rem;
-      overflow: hidden;
+      max-width: 90vw; max-height: 90vh;
+      border-radius: 1.5rem; overflow: hidden;
       box-shadow: 0 30px 60px -15px rgba(0,0,0,0.5);
-      background: #0f2b3d;
-      position: relative;
+      background: #0f2b3d; position: relative;
       animation: fadeIn 0.25s ease-out;
+      display: flex; flex-direction: column;
     }
-
-    .modal-content img {
-      max-width: 90vw;
-      max-height: 80vh;
-      display: block;
-      object-fit: contain;
+    .modal-canvas-wrapper {
+      position: relative; overflow: hidden;
+      max-width: 90vw; max-height: 75vh;
+      background: #0a1f2b;
+      cursor: grab; touch-action: none; user-select: none;
     }
-
+    .modal-canvas-wrapper.grabbing { cursor: grabbing; }
+    .modal-canvas-wrapper img {
+      max-width: 90vw; max-height: 75vh;
+      display: block; object-fit: contain;
+      transition: transform 0.08s linear;
+      transform-origin: 0 0;
+      pointer-events: none;
+    }
     .modal-caption {
-      padding: 0.75rem 1.25rem;
-      background: #10394d;
-      color: white;
-      font-size: 0.85rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+      padding: 0.75rem 1.25rem; background: #10394d; color: white;
+      font-size: 0.85rem; display: flex; justify-content: space-between;
+      align-items: center; gap: 1rem;
     }
-
+    .modal-toolbar {
+      display: flex; gap: 0.5rem; align-items: center;
+    }
+    .modal-toolbar button {
+      padding: 0.4rem 0.9rem; font-size: 0.78rem;
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.25);
+      color: white; border-radius: 2rem;
+    }
+    .modal-toolbar button:hover {
+      background: rgba(255,255,255,0.25);
+      transform: none;
+    }
     .modal-close {
-      position: absolute;
-      top: 0.75rem;
-      right: 0.75rem;
+      position: absolute; top: 0.75rem; right: 0.75rem;
       background: rgba(255,255,255,0.15);
       backdrop-filter: blur(4px);
       border: 1px solid rgba(255,255,255,0.3);
-      color: white;
-      width: 2.25rem;
-      height: 2.25rem;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.2rem;
-      cursor: pointer;
-      transition: all 0.2s;
-      z-index: 2;
+      color: white; width: 2.25rem; height: 2.25rem;
+      border-radius: 50%; display: flex; align-items: center;
+      justify-content: center; font-size: 1.2rem;
+      cursor: pointer; transition: all 0.2s; z-index: 2;
     }
-
     .modal-close:hover {
-      background: rgba(255,255,255,0.3);
-      transform: scale(1.05);
+      background: rgba(255,255,255,0.3); transform: scale(1.05);
     }
 
-    /* 响应式微调 */
     @media (max-width: 650px) {
       body { padding: 1rem 0.75rem; }
       .app-container { padding: 1.5rem 1rem; border-radius: 2rem; }
@@ -638,20 +515,14 @@
       .history-body { padding: 1rem 1.2rem 1.25rem; }
     }
 
-    /* 动画 */
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(6px); }
       to { opacity: 1; transform: translateY(0); }
     }
+    .card { animation: fadeIn 0.25s ease-out; }
 
-    .card {
-      animation: fadeIn 0.25s ease-out;
-    }
-
-    /* 模型区与操作栏分隔线 */
     .section-divider {
-      width: 100%;
-      height: 1px;
+      width: 100%; height: 1px;
       background: linear-gradient(90deg, transparent, #c2dae9, transparent);
       margin: 0.25rem 0 0.5rem;
     }
@@ -661,34 +532,26 @@
 <div class="app-container">
   <h1>电池包表面裂纹检测系统</h1>
 
-  <!-- 操作栏：模型上传 + 图片上传 + 检测/导出 -->
   <div class="action-bar">
-    <!-- 模型上传行 -->
     <div class="model-upload-row">
       <div class="model-input-wrapper">
         <input type="file" id="modelInput" accept=".pt,.pth,.onnx,.h5,.pb,.tflite,.engine,.trt,.weights,.bin">
         <span class="model-status empty" id="modelStatus">未选择模型</span>
       </div>
     </div>
-
     <div class="section-divider"></div>
-
-    <!-- 图片上传行 -->
     <input type="file" id="fileInput" multiple accept="image/*">
     <button id="detectBtn">🔎 开始检测</button>
     <button id="exportBtn">📥 导出 CSV</button>
     <span class="hint"><i>支持多图</i></span>
   </div>
 
-  <!-- 图片卡片渲染区（当前批次检测结果） -->
   <div id="results"></div>
 
-  <!-- 表格数据渲染区 -->
   <div id="tableDiv">
     <div class="empty-message">暂无检测数据，请选择图片并开始检测</div>
   </div>
 
-  <!-- ========== 新增：检测历史窗口 ========== -->
   <div class="history-section collapsed" id="historySection">
     <div class="history-header" id="historyHeader">
       <h2>检测历史</h2>
@@ -709,301 +572,169 @@
 <div class="modal-backdrop" id="modalBackdrop">
   <div class="modal-content">
     <div class="modal-close" id="modalClose">✕</div>
-    <img id="modalImage" src="" alt="历史检测图片">
+    <div class="modal-canvas-wrapper" id="modalCanvasWrapper">
+      <img id="modalImage" src="" alt="历史检测图片">
+      <div class="manual-overlay" id="modalManualOverlay" style="display:none;"></div>
+    </div>
     <div class="modal-caption">
       <span id="modalCaption">检测图片</span>
-      <span id="modalDate"></span>
+      <div class="modal-toolbar">
+        <button id="modalZoomIn">＋ 放大</button>
+        <button id="modalZoomOut">－ 缩小</button>
+        <button id="modalReset">↺ 重置</button>
+      </div>
     </div>
   </div>
 </div>
 
 <script>
-  (function() {
-    // ---------- 核心状态 ----------
-    let allRows = [];
-    let currentModelFile = null;
-    // 历史记录：[{ id, fileName, imageUrl, detectCount, inferenceTime, timestamp, boxes }]
-    let historyItems = [];
+(function() {
+  // ---------- 核心状态 ----------
+  let allRows = [];
+  let currentModelFile = null;
+  let historyItems = []; // { id, fileName, imageUrl, detectCount, inferenceTime, timestamp, boxes, width, height }
 
-    const modelInput = document.getElementById('modelInput');
-    const modelStatus = document.getElementById('modelStatus');
-    const fileInput = document.getElementById('fileInput');
-    const detectBtn = document.getElementById('detectBtn');
-    const exportBtn = document.getElementById('exportBtn');
-    const resultsDiv = document.getElementById('results');
-    const tableDiv = document.getElementById('tableDiv');
+  const modelInput = document.getElementById('modelInput');
+  const modelStatus = document.getElementById('modelStatus');
+  const fileInput = document.getElementById('fileInput');
+  const detectBtn = document.getElementById('detectBtn');
+  const exportBtn = document.getElementById('exportBtn');
+  const resultsDiv = document.getElementById('results');
+  const tableDiv = document.getElementById('tableDiv');
 
-    // 历史相关 DOM
-    const historySection = document.getElementById('historySection');
-    const historyHeader = document.getElementById('historyHeader');
-    const historyGrid = document.getElementById('historyGrid');
-    const historyCount = document.getElementById('historyCount');
+  const historySection = document.getElementById('historySection');
+  const historyHeader = document.getElementById('historyHeader');
+  const historyGrid = document.getElementById('historyGrid');
+  const historyCount = document.getElementById('historyCount');
 
-    // 模态相关 DOM
-    const modalBackdrop = document.getElementById('modalBackdrop');
-    const modalImage = document.getElementById('modalImage');
-    const modalCaption = document.getElementById('modalCaption');
-    const modalDate = document.getElementById('modalDate');
-    const modalClose = document.getElementById('modalClose');
+  const modalBackdrop = document.getElementById('modalBackdrop');
+  const modalImage = document.getElementById('modalImage');
+  const modalCaption = document.getElementById('modalCaption');
+  const modalDate = document.getElementById('modalDate');
+  const modalClose = document.getElementById('modalClose');
+  const modalCanvasWrapper = document.getElementById('modalCanvasWrapper');
+  const modalManualOverlay = document.getElementById('modalManualOverlay');
 
-    // ---------- 初始化 ----------
-    function renderEmptyTablePlaceholder() {
-      tableDiv.innerHTML = '<div class="empty-message">✨ 检测结果表格将显示在此处，请上传图片并检测</div>';
+  // ---------- 初始化 ----------
+  function renderEmptyTablePlaceholder() {
+    tableDiv.innerHTML = '<div class="empty-message">✨ 检测结果表格将显示在此处，请上传图片并检测</div>';
+  }
+  renderEmptyTablePlaceholder();
+  renderHistory();
+
+  // ---------- 模型上传 ----------
+  modelInput.addEventListener('change', () => {
+    const file = modelInput.files[0];
+    if (file) {
+      currentModelFile = file;
+      modelStatus.textContent = '✓ ' + file.name;
+      modelStatus.classList.remove('empty');
+    } else {
+      currentModelFile = null;
+      modelStatus.textContent = '未选择模型';
+      modelStatus.classList.add('empty');
     }
-    renderEmptyTablePlaceholder();
-    renderHistory();
+  });
 
-    // ---------- 模型上传交互 ----------
-    modelInput.addEventListener('change', () => {
-      const file = modelInput.files[0];
-      if (file) {
-        currentModelFile = file;
-        modelStatus.textContent = '✓ ' + file.name;
-        modelStatus.classList.remove('empty');
-      } else {
-        currentModelFile = null;
-        modelStatus.textContent = '未选择模型';
-        modelStatus.classList.add('empty');
-      }
-    });
+  historyHeader.addEventListener('click', () => {
+    historySection.classList.toggle('collapsed');
+  });
 
-    // ---------- 历史面板折叠交互 ----------
-    historyHeader.addEventListener('click', () => {
-      historySection.classList.toggle('collapsed');
-      // 切换图标方向由 CSS 控制
-    });
-
-    // ---------- 模态关闭 ----------
-    modalClose.addEventListener('click', closeModal);
-    modalBackdrop.addEventListener('click', (e) => {
-      if (e.target === modalBackdrop) closeModal();
-    });
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && modalBackdrop.classList.contains('active')) {
-        closeModal();
-      }
-    });
-
-    function closeModal() {
-      modalBackdrop.classList.remove('active');
-      modalImage.src = '';
-    }
-
-    function openModal(item) {
-      modalImage.src = item.imageUrl;
-      modalCaption.textContent = item.fileName || '检测图片';
-      modalDate.textContent = item.timestamp ? new Date(item.timestamp).toLocaleString('zh-CN') : '';
-      modalBackdrop.classList.add('active');
-    }
-
-    // ---------- 渲染历史记录 ----------
-    function renderHistory() {
-      // 更新计数
-      historyCount.textContent = historyItems.length + ' 张';
-
-      if (!historyItems.length) {
-        historyGrid.innerHTML = '<div class="history-empty">暂无检测历史，上传图片并检测后将自动保存在此处</div>';
-        return;
-      }
-
-      let html = '';
-      // 从新到旧展示
-      historyItems.slice().reverse().forEach((item, idx) => {
-        // 使用原始索引或者唯一的 id 作为标识，用 data-id 存储 item.id
-        html += `
-          <div class="history-item" data-id="${item.id}" title="点击查看大图">
-            <img src="${item.imageUrl}" alt="${item.fileName}" loading="lazy">
-            <span class="history-timestamp">${formatTime(item.timestamp)}</span>
-            <div class="history-item-overlay">
-              <span class="name">${escapeHtml(item.fileName)}</span>
-              <div class="stats">
-                <span>🔍 ${item.detectCount} 框</span>
-                <span>⏱ ${item.inferenceTime ? item.inferenceTime.toFixed(0) + 'ms' : '--'}</span>
-              </div>
-            </div>
-          </div>
-        `;
-      });
-      historyGrid.innerHTML = html;
-
-      // 绑定点击事件
-      historyGrid.querySelectorAll('.history-item').forEach(el => {
-        el.addEventListener('click', () => {
-          const id = el.dataset.id;
-          const item = historyItems.find(it => it.id == id);
-          if (item) openModal(item);
-        });
-      });
-    }
-
-    // 工具：简单转义
-    function escapeHtml(str) {
-      if (!str) return '';
-      return String(str).replace(/[&<>"]/g, function(m) {
-        if (m === '&') return '&amp;';
-        if (m === '<') return '&lt;';
-        if (m === '>') return '&gt;';
-        if (m === '"') return '&quot;';
-        return m;
-      });
-    }
-
-    // 格式化时间：只显示 HH:MM:SS
-    function formatTime(ts) {
-      if (!ts) return '';
-      const d = new Date(ts);
-      return d.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-    }
-
-    // ---------- 检测按钮事件 ----------
-    detectBtn.onclick = async () => {
-      // 清空当前结果展示
-      allRows = [];
-      resultsDiv.innerHTML = '';
-      tableDiv.innerHTML = '';
-
-      const files = fileInput.files;
-      if (!files.length) {
-        alert('请先选择图片');
-        return;
-      }
-
-      // 禁用按钮防重复点击
-      detectBtn.disabled = true;
-      detectBtn.textContent = '⏳ 检测中...';
-
-      for (const file of files) {
-        const formData = new FormData();
-        formData.append('image', file);
-
-        if (currentModelFile) {
-          formData.append('model', currentModelFile);
-        }
-
-        let data;
-        try {
-          const resp = await fetch('/predict', { method: 'POST', body: formData });
-          data = await resp.json();
-        } catch (e) {
-          alert(`请求失败：${e.message} (文件: ${file.name})`);
-          continue;
-        }
-
-        // 创建卡片
-        const card = document.createElement('div');
-        card.className = 'card';
-        card.innerHTML = `<h3>${data.image_id || file.name}</h3>`;
-
-        const canvas = document.createElement('canvas');
-        card.appendChild(canvas);
-        resultsDiv.appendChild(card);
-
-        // 图片 URL 由文件创建，用于卡片和历史
-        const imageUrl = URL.createObjectURL(file);
-
-        // 画框逻辑
-        const img = new Image();
-        img.onload = () => {
-          canvas.width = img.naturalWidth;
-          canvas.height = img.naturalHeight;
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0);
-
-          if (data.boxes && Array.isArray(data.boxes)) {
-            data.boxes.forEach(box => {
-              if (box.class_name === 'Ok') return;
-
-              ctx.strokeStyle = '#e11d48';
-              ctx.lineWidth = 3;
-              ctx.shadowColor = 'rgba(0,0,0,0.3)';
-              ctx.shadowBlur = 6;
-              ctx.strokeRect(
-                box.x_min,
-                box.y_min,
-                box.x_max - box.x_min,
-                box.y_max - box.y_min
-              );
-              ctx.shadowBlur = 0;
-
-              const label = `${box.class_name} ${box.confidence}`;
-              ctx.font = 'bold 15px "Inter", "Segoe UI", Arial, sans-serif';
-              const textWidth = ctx.measureText(label).width;
-              const textHeight = 20;
-
-              ctx.fillStyle = 'rgba(225, 29, 72, 0.85)';
-              ctx.shadowBlur = 8;
-              ctx.shadowColor = 'rgba(0, 0, 0, 0.2)';
-              ctx.fillRect(
-                box.x_min,
-                Math.max(box.y_min - textHeight - 2, 2),
-                textWidth + 12,
-                textHeight + 4
-              );
-              ctx.shadowBlur = 0;
-
-              ctx.fillStyle = 'white';
-              ctx.font = 'bold 14px "Inter", "Segoe UI", Arial, sans-serif';
-              ctx.fillText(
-                label,
-                box.x_min + 6,
-                Math.max(box.y_min - 8, 16)
-              );
-            });
-          }
-        };
-        img.src = imageUrl;
-
-        // 收集 CSV 行
-        if (data.boxes && Array.isArray(data.boxes)) {
-          data.boxes.forEach(box => {
-            allRows.push({
-              image_id: data.image_id || file.name,
-              class_name: box.class_name,
-              confidence: box.confidence,
-              x_min: box.x_min,
-              y_min: box.y_min,
-              x_max: box.x_max,
-              y_max: box.y_max,
-              inference_time_ms: data.inference_time_ms
-            });
-          });
-        }
-
-        // ★ 保存到历史记录
-        const detectCount = data.boxes ? data.boxes.filter(b => b.class_name !== 'Ok').length : 0;
-        const inferenceTime = data.inference_time_ms || 0;
-
-        historyItems.push({
-          id: Date.now() + '_' + Math.random().toString(36).substr(2, 9),
-          fileName: data.image_id || file.name,
-          imageUrl: imageUrl,
-          detectCount: detectCount,
-          inferenceTime: inferenceTime,
-          timestamp: Date.now(),
-          boxes: data.boxes || []
-        });
-
-        // 每张图片处理后立即刷新历史展示
-        renderHistory();
-      }
-
-      // 渲染表格
-      renderTable();
-
-      // 恢复按钮状态
-      detectBtn.disabled = false;
-      detectBtn.textContent = '🔎 开始检测';
+  // ============================================================
+  // 通用：给一个 canvas-wrapper 绑定缩放/拖拽/画框/框选放大
+  // ============================================================
+  function attachCanvasInteractions(wrapper, canvas, boxesRef, onBoxesChange) {
+    const state = {
+      scale: 1,
+      tx: 0,
+      ty: 0,
+      isPanning: false,
+      panStartX: 0,
+      panStartY: 0,
+      startTx: 0,
+      startTy: 0,
+      mode: 'pan', // 'pan' | 'draw'
+      drawStart: null,
+      drawCurrent: null,
+      manualBoxes: [],
+      dragging: false
     };
 
-    // ---------- 渲染表格 ----------
-    function renderTable() {
-      if (!allRows.length) {
-        renderEmptyTablePlaceholder();
-        return;
-      }
+    // 应用变换
+    function applyTransform() {
+      canvas.style.transform = `translate(${state.tx}px, ${state.ty}px) scale(${state.scale})`;
+    }
 
-      const header = [
-        'image_id', 'class_name', 'confidence',
-        'x_min', 'y_min', 'x_max', 'y_max', 'inference_time_ms'
-      ];
-      let html = '<table><thead><tr
+    // 更新缩放指示（如果wrapper有对应info元素）
+    function updateZoomInfo() {
+      const info = wrapper.parentElement.querySelector('.zoom-info');
+      if (info) info.textContent = Math.round(state.scale * 100) + '%';
+    }
+
+    // 鼠标滚轮缩放
+    wrapper.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      const rect = wrapper.getBoundingClientRect();
+      const mx = e.clientX - rect.left;
+      const my = e.clientY - rect.top;
+      const delta = -e.deltaY * 0.0015;
+      const newScale = Math.min(8, Math.max(0.3, state.scale * (1 + delta)));
+      // 以鼠标为中心缩放
+      state.tx = mx - (mx - state.tx) * (newScale / state.scale);
+      state.ty = my - (my - state.ty) * (newScale / state.scale);
+      state.scale = newScale;
+      applyTransform();
+      updateZoomInfo();
+    }, { passive: false });
+
+    // 鼠标按下
+    wrapper.addEventListener('mousedown', (e) => {
+      if (e.button !== 0) return;
+      if (state.mode === 'draw') {
+        // 开始画框
+        const rect = wrapper.getBoundingClientRect();
+        state.drawStart = {
+          x: (e.clientX - rect.left - state.tx) / state.scale,
+          y: (e.clientY - rect.top - state.ty) / state.scale
+        };
+        state.drawCurrent = { ...state.drawStart };
+        showManualOverlay();
+      } else {
+        // 平移
+        state.isPanning = true;
+        state.panStartX = e.clientX;
+        state.panStartY = e.clientY;
+        state.startTx = state.tx;
+        state.startTy = state.ty;
+        wrapper.classList.add('grabbing');
+      }
+    });
+
+    // 鼠标移动
+    window.addEventListener('mousemove', (e) => {
+      if (state.isPanning) {
+        state.tx = state.startTx + (e.clientX - state.panStartX);
+        state.ty = state.startTy + (e.clientY - state.panStartY);
+        applyTransform();
+      } else if (state.mode === 'draw' && state.drawStart) {
+        const rect = wrapper.getBoundingClientRect();
+        state.drawCurrent = {
+          x: (e.clientX - rect.left - state.tx) / state.scale,
+          y: (e.clientY - rect.top - state.ty) / state.scale
+        };
+        updateManualOverlay();
+      }
+    });
+
+    // 鼠标松开
+    window.addEventListener('mouseup', () => {
+      if (state.isPanning) {
+        state.isPanning = false;
+        wrapper.classList.remove('grabbing');
+      } else if (state.mode === 'draw' && state.drawStart && state.drawCurrent) {
+        const x1 = Math.min(state.drawStart.x, state.drawCurrent.x);
+        const y1 = Math.min(state.drawStart.y, state.drawCurrent.y);
+        const x2 = Math.max(state.drawStart.x, state.drawCurrent.x);
+        const y2 = Math.max(state.drawStart.y, state.drawCurrent.y);
+        if (x2 - x1 > 5 && y2 - y1 > 5) {
+          // 坐标转回原图坐标（当前已经是在原图坐标系

@@ -920,7 +920,8 @@
       </div>
     </div>
     <div class="section-divider"></div>
-    <input type="file" id="fileInput" multiple accept="image/*" webkitdirectory directory>
+    <!-- ★★★ 已移除 webkitdirectory directory，现在可以选单个/多个图片文件 ★★★ -->
+    <input type="file" id="fileInput" multiple accept="image/*">
     <button id="detectBtn" data-i18n="detectBtn">🔎 开始检测</button>
     <button id="cancelBtn" data-i18n="cancelBtn">✕ 取消检测</button>
     <button id="cameraBtn" data-i18n="cameraBtn">📹 摄像头检测</button>
@@ -1463,7 +1464,7 @@
     const imageWidth = img.naturalWidth;
     const imageHeight = img.naturalHeight;
 
-    // ★★★ 修改处 1：接收 masks / mask_meta ★★★
+    // 接收 masks / mask_meta
     const boxesRef = data.boxes || [];
     data.boxes = boxesRef;
 
@@ -1472,7 +1473,6 @@
     data.masks = masksRef;
     data.mask_meta = maskMetaRef;
 
-    // ★★★ 挂到 img 上，供 drawCanvas / drawCompareCanvas 使用 ★★★
     img.__masks = masksRef;
     img.__maskMeta = maskMetaRef;
 
@@ -1520,7 +1520,6 @@
 
     let showBoxes = true;
 
-    // ★★★ 确保 img.__masks 在 redrawAll 调用前已挂载（此处已在上面赋值） ★★★
     function redrawAll() {
       drawCanvas(canvas, img, boxesRef, -1, showBoxes);
       drawCompareCanvas(compareCanvas, img, boxesRef, showBoxes);
@@ -1826,10 +1825,8 @@
     }, 'image/jpeg', 0.85);
   }
 
-  // ★★★ 摄像头也支持画 mask（可选，简洁处理） ★★★
   function drawCameraDetections(boxes, masks) {
     const ctx = cameraCanvas.getContext('2d');
-    // 先画 mask 多边形
     (masks || []).forEach(poly => {
       if (!poly || poly.length < 3) return;
       ctx.beginPath();
@@ -1842,7 +1839,6 @@
       ctx.lineWidth = 2;
       ctx.stroke();
     });
-    // 再画矩形
     boxes.forEach(box => {
       if (box.class_name === 'Ok') return;
       ctx.strokeStyle = '#e11d48';
@@ -2023,7 +2019,7 @@
   }
 
   // ============================================================
-  // ★★★ 修改处 2：drawCanvas 里画多边形掩膜 ★★★
+  // drawCanvas：画多边形掩膜 + 矩形框
   // ============================================================
   function drawCanvas(canvas, img, boxes, highlightIndex = -1, showBoxes = true) {
     canvas.width = img.naturalWidth;
@@ -2032,8 +2028,6 @@
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(img, 0, 0);
 
-    // 先画多边形掩膜（即使 showBoxes = false 也画 mask？——这里跟 showBoxes 一起控制更合理，但按你要求只控制矩形）
-    // 如果你希望 mask 也随“隐藏框”一起隐藏，把下面这段放进 if (showBoxes) 内即可。
     const masks = img.__masks || [];
     const maskMeta = img.__maskMeta || [];
     masks.forEach((poly, i) => {
@@ -2050,7 +2044,6 @@
       ctx.lineWidth = 2;
       ctx.stroke();
 
-      // 顶点小圆点
       ctx.fillStyle = '#fff';
       ctx.strokeStyle = '#e11d48';
       ctx.lineWidth = 1.5;
@@ -2092,7 +2085,7 @@
   }
 
   // ============================================================
-  // ★★★ 修改处 3：drawCompareCanvas 里也画多边形掩膜 ★★★
+  // drawCompareCanvas：画多边形掩膜 + 矩形框
   // ============================================================
   function drawCompareCanvas(canvas, img, boxes, showBoxes = true) {
     canvas.width = img.naturalWidth;
@@ -2101,7 +2094,6 @@
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(img, 0, 0);
 
-    // 多边形掩膜
     const masks = img.__masks || [];
     masks.forEach(poly => {
       if (!poly || poly.length < 3) return;
@@ -2114,7 +2106,6 @@
       ctx.strokeStyle = '#e11d48';
       ctx.lineWidth = 2;
       ctx.stroke();
-      // 顶点小圆点
       ctx.fillStyle = '#fff';
       ctx.strokeStyle = '#e11d48';
       ctx.lineWidth = 1.5;
@@ -2171,7 +2162,7 @@
   }
 
   // ============================================================
-  // 统计与图表（保持不变）
+  // 统计与图表
   // ============================================================
   function renderSummaryAndCharts() {
     const allBoxes = [];

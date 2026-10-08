@@ -186,6 +186,18 @@
       color: white;
       border-color: transparent;
     }
+    /* ★ 新增：选择文件夹按钮专属样式 */
+    #pickFolderBtn {
+      background: linear-gradient(120deg, #10b981, #059669);
+      color: white;
+      border: none;
+      box-shadow: 0 8px 18px -6px #10b98180;
+    }
+    #pickFolderBtn:hover {
+      background: linear-gradient(120deg, #059669, #047857);
+      box-shadow: 0 12px 22px -8px #10b981cc;
+      color: white;
+    }
 
     .drop-overlay {
       position: fixed;
@@ -920,8 +932,12 @@
       </div>
     </div>
     <div class="section-divider"></div>
-    <!-- ★★★ 已移除 webkitdirectory directory，现在可以选单个/多个图片文件 ★★★ -->
+    <!-- ★ 图片选择（支持单张/多张） -->
     <input type="file" id="fileInput" multiple accept="image/*">
+    <!-- ★ 隐藏的文件夹选择 input -->
+    <input type="file" id="folderInput" multiple accept="image/*" webkitdirectory directory style="display:none;">
+    <!-- ★ 新增：选择文件夹按钮 -->
+    <button id="pickFolderBtn" data-i18n="pickFolder">📁 选择文件夹</button>
     <button id="detectBtn" data-i18n="detectBtn">🔎 开始检测</button>
     <button id="cancelBtn" data-i18n="cancelBtn">✕ 取消检测</button>
     <button id="cameraBtn" data-i18n="cameraBtn">📹 摄像头检测</button>
@@ -1049,6 +1065,8 @@
       cameraBtn: '📹 摄像头检测',
       exportBtn: '📥 导出 CSV',
       hint: '支持多图 / 文件夹拖拽',
+      pickFolder: '📁 选择文件夹',           // ★ 新增
+      folderNoImage: '文件夹里没有找到图片',   // ★ 新增
       progressLabel: '检测中...',
       cameraTitle: '摄像头 / 产线实时检测',
       cameraPlaceholder: '点击下方"启动摄像头"开始实时检测',
@@ -1104,6 +1122,8 @@
       cameraBtn: '📹 Camera',
       exportBtn: '📥 Export CSV',
       hint: 'Multiple images / Drag folder',
+      pickFolder: '📁 Select Folder',          // ★ 新增
+      folderNoImage: 'No images found in folder', // ★ 新增
       progressLabel: 'Detecting...',
       cameraTitle: 'Camera / Production Line Live Detection',
       cameraPlaceholder: 'Click "Start Camera" below to begin live detection',
@@ -1195,6 +1215,10 @@
   const resultsDiv = document.getElementById('results');
   const tableDiv = document.getElementById('tableDiv');
 
+  // ★ 新增：文件夹选择相关引用
+  const folderInput = document.getElementById('folderInput');
+  const pickFolderBtn = document.getElementById('pickFolderBtn');
+
   const historySection = document.getElementById('historySection');
   const historyHeader = document.getElementById('historyHeader');
   const historyGrid = document.getElementById('historyGrid');
@@ -1281,6 +1305,26 @@
 
   historyHeader.addEventListener('click', () => {
     historySection.classList.toggle('collapsed');
+  });
+
+  // ============================================================
+  // ★ 新增：选择文件夹按钮逻辑
+  // ============================================================
+  pickFolderBtn.addEventListener('click', () => {
+    folderInput.click();
+  });
+
+  folderInput.addEventListener('change', async () => {
+    const files = Array.from(folderInput.files).filter(f =>
+      f.type.startsWith('image/') || /\.(jpg|jpeg|png|bmp|webp)$/i.test(f.name)
+    );
+    if (!files.length) {
+      alert(t('folderNoImage'));
+      folderInput.value = ''; // 重置，避免下次选中同一文件夹不触发
+      return;
+    }
+    folderInput.value = ''; // 重置
+    await runDetectionWithFiles(files);
   });
 
   // ============================================================
